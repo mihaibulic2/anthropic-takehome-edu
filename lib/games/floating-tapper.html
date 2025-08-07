@@ -275,36 +275,37 @@ Must have 2-4 distinct answers. correctAnswerIndex indicates 0-based index in an
         // Create floating answers based on style
         const containerWidth = window.innerWidth;
         const containerHeight = window.innerHeight;
-        const MIN_X = 200;
-        const MIN_Y = 200;
-        const MIN_DISTANCE = 120; // Manhattan distance between items
+        const MIN_X_DIST = 200;
+        const MIN_Y_DIST = 100;
+        const MAX_ATTEMPTS = 100;
         
         const placedPositions = [];
         
-        const getValidPosition = (width, height, itemWidth, itemHeight, attempts = 100) => {
-          for (let i = 0; i < attempts; i++) {
-            const x = MIN_X + Math.random() * (width - itemWidth - MIN_X);
-            const y = MIN_Y + Math.random() * (height - itemHeight - MIN_Y);
+        const getValidPosition = (width, height, itemWidth, itemHeight) => {
+          let x = 0;
+          let y = 0;
+          for (let i = 0; i < MAX_ATTEMPTS; i++) {
+            x = Math.random() * (width - itemWidth);
+            y = Math.random() * (height - itemHeight);
             
             // Check distance from all previously placed items
             let validPosition = true;
             for (const pos of placedPositions) {
-              const manhattanDistance = Math.abs(x - pos.x) + Math.abs(y - pos.y);
-              if (manhattanDistance < MIN_DISTANCE) {
+              const isFarEnough = (Math.abs(x - pos.x) > MIN_X_DIST && Math.abs(y - pos.y) > MIN_Y_DIST);
+              if (!isFarEnough) {
+                // Not far enough from one of the other items, no point checking other items
+                // since pos is invalid
                 validPosition = false;
                 break;
               }
             }
-            
+
+            // Found a valid position, break so we can save it!
             if (validPosition) {
-              placedPositions.push({ x, y });
-              return { x, y };
+              break;
             }
           }
           
-          // Fallback: return a position even if not ideal
-          const x = MIN_X + Math.random() * (width - itemWidth - MIN_X);
-          const y = MIN_Y + Math.random() * (height - itemHeight - MIN_Y);
           placedPositions.push({ x, y });
           return { x, y };
         };
