@@ -266,6 +266,63 @@ const PurePreviewMessage = ({
                 }
               }
 
+              if (type === 'tool-queryAndShowGames') {
+                const { toolCallId, state } = part;
+
+                if (state === 'input-available') {
+                  return (
+                    <div key={toolCallId} className="text-sm text-muted-foreground p-2 border rounded">
+                      🎮 Looking for educational games...
+                    </div>
+                  );
+                }
+
+                if (state === 'output-available') {
+                  const { output } = part;
+
+                  if ('error' in output) {
+                    return (
+                      <div
+                        key={toolCallId}
+                        className="text-red-500 p-2 border rounded"
+                      >
+                        Error: {String(output.error)}
+                      </div>
+                    );
+                  }
+
+                  // Automatically show game popup for first result
+                  if (output.results && output.results.length > 0) {
+                    const topGame = output.results[0];
+                    
+                    // Show popup immediately when tool output becomes available
+                    setTimeout(() => {
+                      alert(`🦀 Claudette says: ${topGame.message}\n\nGame: ${topGame.name}\nID: ${topGame.gameId}\nStyle: ${topGame.selectedStyle}\nMatch Score: ${(topGame.matchScore * 100).toFixed(0)}%`);
+                    }, 100);
+
+                    return (
+                      <div key={toolCallId} className="p-3 border rounded bg-green-50">
+                        <div className="text-sm font-medium text-green-800 mb-2">
+                          🎮 Found {output.results.length} educational game{output.results.length !== 1 ? 's' : ''}!
+                        </div>
+                        <div className="text-sm text-green-700">
+                          Top match: <strong>{topGame.name}</strong> ({(topGame.matchScore * 100).toFixed(0)}% match)
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Claudette will show you the game popup in a moment! 🦀
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={toolCallId} className="text-sm text-muted-foreground p-2 border rounded">
+                      🎮 No suitable games found for this topic.
+                    </div>
+                  );
+                }
+              }
+
               if (type === 'tool-requestSuggestions') {
                 const { toolCallId, state } = part;
 

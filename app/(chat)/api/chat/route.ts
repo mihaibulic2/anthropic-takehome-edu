@@ -19,8 +19,7 @@ import {
 } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
-import { queryGames } from '@/lib/ai/tools/query-games';
-import { presentGame } from '@/lib/ai/tools/present-game';
+import { queryAndShowGames } from '@/lib/ai/tools/query-games';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -164,8 +163,7 @@ export async function POST(request: Request) {
                   // 'updateDocument',
                   // 'requestSuggestions',
 
-                  'queryGames',
-                  'presentGame',
+                  'queryAndShowGames',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           tools: {
@@ -177,8 +175,7 @@ export async function POST(request: Request) {
             //   session,
             //   dataStream,
             // }),
-            queryGames,
-            presentGame: presentGame({ dataStream }),
+            queryAndShowGames,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

@@ -1,0 +1,170 @@
+{
+  "coreGames": [
+    {
+      "id": "floating_tapper",
+      "description": "Objects float around screen in random patterns, user taps correct answers",
+      "supportedStyles": {
+        "underwater": "Fish swim in curved paths, tapping triggers fishing rod animation from boat at top center",
+        "space": "Asteroids drift toward bottom center, tapping fires laser beam to destroy target",
+        "forest": "Leaves fall in gentle zigzag patterns, tapping causes bird to swoop down and catch leaf",
+        "candy": "Candy pieces bounce in bubbly motions, tapping makes them pop with sparkle effect"
+      },
+      "exampleTopics": {
+        "math_facts": "Tap correct answer for multiplication/division problems",
+        "spelling_words": "Tap correctly spelled word among options",
+        "state_capitals": "Tap correct capital city for given state",
+        "animal_habitats": "Tap correct habitat for shown animal"
+      }
+    },
+    {
+      "id": "side_scroller",
+      "description": "Player-controlled character moves left/right, collides with objects to select them",
+      "supportedStyles": {
+        "underwater": "Shark swims through coral reef, collects fish that swim in schools",
+        "space": "Spaceship flies through asteroid field, collects glowing power cores",
+        "forest": "Bear walks through woods, collects berries hanging from branches",
+        "city": "Delivery truck drives down street, collects packages on sidewalks"
+      },
+      "exampleTopics": {
+        "number_properties": "Collect only even numbers or multiples of 5",
+        "letter_types": "Collect only vowels or consonants from floating letters",
+        "living_things": "Collect only living things while avoiding non-living",
+        "healthy_foods": "Collect nutritious foods while avoiding junk food"
+      }
+    },
+    {
+      "id": "drag_sorter",
+      "description": "User drags items from source area into labeled buckets or categories",
+      "supportedStyles": {
+        "underwater": "Drag sea creatures into different coral formations",
+        "space": "Sort space junk into recycling bins on space station",
+        "kitchen": "Sort ingredients into cooking pots or recipe categories",
+        "farm": "Sort animals into different barn sections or feed types"
+      },
+      "exampleTopics": {
+        "parts_of_speech": "Sort words into noun, verb, adjective buckets",
+        "animal_classification": "Sort animals into mammals, birds, reptiles",
+        "states_of_matter": "Sort items into solid, liquid, gas categories",
+        "geometric_shapes": "Sort shapes by number of sides or type",
+        "continents": "Sort countries into their correct continents"
+      }
+    },
+    {
+      "id": "sequence_builder",
+      "description": "User drags items into slots to build correct order from left to right",
+      "supportedStyles": {
+        "space": "Arrange rocket stages in launch sequence",
+        "kitchen": "Put recipe steps in cooking order",
+        "farm": "Arrange crop growth stages from seed to harvest",
+        "city": "Arrange daily schedule or travel route in order"
+      },
+      "exampleTopics": {
+        "spelling_words": "Arrange letters to spell word correctly",
+        "historical_events": "Put events in chronological order",
+        "number_ordering": "Arrange numbers from smallest to largest",
+        "life_cycles": "Put stages of plant/animal life cycle in order",
+        "story_sequence": "Arrange story events in correct order"
+      }
+    },
+    {
+      "id": "matching_pairs",
+      "description": "Grid of face-down cards, flip two at a time to find matches",
+      "supportedStyles": {
+        "underwater": "Ocean-themed cards with shell and coral borders",
+        "space": "Galaxy cards with star and planet decorations",
+        "forest": "Woodland cards with leaf and tree patterns",
+        "candy": "Sweet-themed cards with colorful wrapper designs"
+      },
+      "exampleTopics": {
+        "math_facts": "Match multiplication problem with correct answer",
+        "vocabulary": "Match word with its definition",
+        "state_capitals": "Match state with its capital city",
+        "equivalent_fractions": "Match fractions that equal same amount"
+      }
+    },
+    {
+      "id": "slider_adjuster",
+      "description": "User moves sliders or dials to set correct numerical values",
+      "supportedStyles": {
+        "space": "Control panel dials on spaceship dashboard",
+        "kitchen": "Oven temperature and timer controls",
+        "city": "Traffic light timing and speed limit controls",
+        "candy": "Candy factory machine temperature and sweetness dials"
+      },
+      "exampleTopics": {
+        "temperature": "Set correct boiling/freezing points",
+        "time_telling": "Adjust clock hands to show given time",
+        "measurement_conversion": "Convert between different units",
+        "number_lines": "Position number correctly on number line",
+        "angles": "Adjust protractor to show given angle degree"
+      }
+    },
+    {
+      "id": "puzzle_assembler",
+      "description": "User drags puzzle pieces into correct positions to complete image or diagram",
+      "supportedStyles": {
+        "space": "Assemble constellation maps or solar system diagrams",
+        "farm": "Put together barn scenes or crop field layouts",
+        "city": "Assemble neighborhood maps or building layouts",
+        "forest": "Complete nature scenes or ecosystem diagrams"
+      },
+      "exampleTopics": {
+        "us_geography": "Assemble map of United States with state pieces",
+        "fractions": "Assemble fraction circles or bars to show whole",
+        "plant_anatomy": "Assemble diagram showing roots, stem, leaves, flower",
+        "story_comprehension": "Arrange picture scenes to match story order"
+      }
+    },
+    {
+      "id": "fill_blanks",
+      "description": "Sentence or equation appears with missing words/numbers, user types or selects from word bank",
+      "supportedStyles": {
+        "underwater": "Message in a bottle with missing words to complete",
+        "space": "Computer terminal with incomplete data to fill in",
+        "forest": "Tree bark with carved message missing some words",
+        "kitchen": "Recipe card with missing ingredients or steps"
+      },
+      "exampleTopics": {
+        "spelling_words": "Fill in missing letters in partially spelled words",
+        "grammar": "Complete sentences with correct verb forms or punctuation",
+        "math_equations": "Fill in missing numbers in equations",
+        "historical_facts": "Complete sentences about historical events",
+        "science_concepts": "Fill in terms about plants, animals, weather"
+      }
+    },
+    {
+      "id": "path_tracer",
+      "description": "User draws line connecting dots or following path in correct sequence",
+      "supportedStyles": {
+        "underwater": "Trace submarine route through ocean obstacles",
+        "space": "Plot spacecraft course between planets and stars",
+        "city": "Draw delivery route connecting houses and buildings",
+        "candy": "Trace path through candy maze or connect candy pieces"
+      },
+      "exampleTopics": {
+        "alphabet_order": "Connect letters A to Z in correct sequence",
+        "number_ordering": "Trace path connecting numbers in order",
+        "cause_effect": "Draw connections between causes and their effects",
+        "map_skills": "Trace route between landmarks on simple map",
+        "food_chains": "Connect animals in correct predator-prey order"
+      }
+    },
+    {
+      "id": "balance_scale",
+      "description": "User adds/removes items from two sides of scale to achieve balance or comparison",
+      "supportedStyles": {
+        "space": "Zero-gravity balance platform with floating objects",
+        "kitchen": "Old-fashioned scale for weighing ingredients",
+        "farm": "Barn scale for weighing different farm products",
+        "candy": "Colorful candy scale with sweet treats as weights"
+      },
+      "exampleTopics": {
+        "number_comparison": "Balance scale to show which number is larger/smaller",
+        "equivalent_fractions": "Balance different fractions that equal same amount",
+        "equation_solving": "Balance equations by adding/removing numbers",
+        "measurement": "Compare weights, lengths, or volumes",
+        "money_values": "Balance different coin combinations to equal same amount"
+      }
+    }
+  ]
+ }

@@ -1,38 +1,102 @@
-import { tool } from 'ai';
+import { tool, generateObject } from 'ai';
 import { z } from 'zod';
+import { myProvider } from '@/lib/ai/providers';
+import gamesDatabase from '@/lib/data/games.json';
 
-export const queryGames = tool({
-  description: 'Search for available educational games based on topic, and other parameters',
+const gameMatchSchema = z.object({
+  results: z.array(z.object({
+    gameId: z.string(),
+    selectedStyle: z.string(),
+    questionSpec: z.string(),
+    requiredQuestions: z.string(),
+    matchScore: z.number().min(0).max(1),
+    name: z.string(),
+    message: z.string()
+  }))
+});
+
+export const queryAndShowGames = tool({
+  description: 'Search for available educational games and automatically show game popup to user',
   inputSchema: z.object({
-    topic: z.string().describe("educational topic being taught (eg 'multiplication')"),
-    level: z.string().describe("Grade level of the topic (eg 'K', '1', etc)"),
-    state: z.string().optional().describe("State in the USA (for matching standards), (eg 'CA')"),
-    style: z.string().describe("Art style for the game (eg 'dinosaurs')"),
-    sampleData: z.string().describe("Representative questions/answers for the game (eg Q: 2+3 (A: 5), Q: 4x5 (A: 20))"),
+    problemSpec: z.string().describe("Short description of the problem user is trying to solve (include exact question if there is one) (eg 'multiplication tables' or 'wants to simplify: x^2 + 4x + 4 = 6x^2 - 8')"),
+    userSpec: z.string().describe("Short description of user (eg age/grade, ability level, gender, game preference, things they like, etc)"),
   }),
 
-  execute: async ({ topic, level, state, style, sampleData }) => {
-    // TODO M3: Implement actual game search logic
-    // This will call Claude with list of all games and requirements
-    // and return sorted list of options with match scores
-    console.log('queryGames called with:', { topic, level, state, style, sampleData });
+  execute: async ({ problemSpec, userSpec }) => {
+    console.log('queryAndShowGames called with:', { problemSpec, userSpec });
     
-    // Mock response for now
-    return {
-      games: [
-        {
-          id: 'times-tables-dino',
-          title: 'Dinosaur Times Tables',
-          topic,
-          level,
-          state,
-          style,
-          sampleData,
-          match: 0.95,
-          description: `Educational game for ${topic} at ${level} level`
-        }
-      ],
-      totalFound: 1
-    };
+    try {
+      // Use Claude to match games based on requirements
+      const result = await generateObject({
+        model: myProvider.languageModel('chat-model'),
+        schema: gameMatchSchema,
+        prompt: `You are a game matching expert for educational games for kids! 
+
+# AVAILABLE GAMES:
+${JSON.stringify(gamesDatabase.coreGames, null, 2)}
+
+# INFORMATION:
+- Things about the problem/topic the user is working on: ${problemSpec || 'not specified'}
+- Things about the user: ${userSpec || 'not specified'}
+
+# TASK
+Use the INFORMATION above to pick the best suited game from the AVAILABLE GAMES list to help the user develop a deep, fundamental understand of the problem or topic in the INFORMATION section. Details:
+
+- Consider the game's description to ensure it can handle the type of question the user wants to work on:
+   - Short questions work well with fast-paced games
+   - Long questions/definitions need slower-paced games
+   - Number answers vs text answers vs visual answers
+   - User input method compatibility
+
+- Consider the underlying topic in the problem to find a game that is well suited to that topic   
+
+- Choose one of the art styles supported by the game to use based on the user's preferences
+
+- Include a question spec that explains exactly the type and difficulty of the questions:
+  - Example: "Multiplication tables under 10", "Government related vocab words for advanced 5th grader (word=answer, definition=question)"
+  - Take into account the problem/topic the user is working on and details about the user:
+    - what age/grade are they in?
+    - what's their ability?
+    - what's the topic?
+
+- Include any REQUIRED exact questions that must be included (optional)
+  - Useful if the user is asking for a specific question or set of questions and we want to include them
+  - Useful if goal is to build up some of the challenges from a starting to ending point (include easy and final questions)
+
+- Calculate a match score (0.0 to 1.0) based on:
+   - Topic relevance (40% weight)
+   - Grade level appropriateness (25% weight) 
+   - Art style availability (20% weight)
+   - Data format suitability for the sample questions (15% weight)
+
+- Other details about output:
+   - Include a short fun name for the game (name)
+   - Include a very short cute message for 'Claudette the curious crab' to say to the student to pitch this game (message)
+   - Only include games with match score >= 0.3
+   - Sort by match score (highest first)
+   - Limit to top 2 results (or less if there are not enough)
+
+# RESPONSE FORMAT (json!)
+Return the results in exactly this JSON format:
+{
+  "results": [
+    {
+      "gameId": { <ID of the selected game from the AVAILABLE GAMES list> },
+      "selectedStyle": "<which of the supportedStyles to use, eg space>",
+      "questionSpec": "<string explaining type / format of question and answers>",
+      "requiredQuestions": "<string with questions / answers the MUST be included>",
+      "matchScore": <0.0-1.0>,
+      "name": "<short fun name for the game>",
+      "message": "<very short cute message for 'Claudette the curious crab' to say to the student to pitch this game>"
+    }
+  ]
+}
+`,
+      });
+
+      return { results: result.object.results };
+    } catch (error) {
+      return { results: [] };
+    }
   },
 });

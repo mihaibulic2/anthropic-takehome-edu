@@ -3,8 +3,7 @@ import type { getWeather } from './ai/tools/get-weather';
 import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
-import type { queryGames } from './ai/tools/query-games';
-import type { presentGame } from './ai/tools/present-game';
+import type { queryAndShowGames } from './ai/tools/query-games';
 import type { InferUITool, UIMessage } from 'ai';
 
 import type { ArtifactKind } from '@/components/artifact';
@@ -24,16 +23,14 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
-type queryGamesTool = InferUITool<typeof queryGames>;
-type presentGameTool = InferUITool<ReturnType<typeof presentGame>>;
+type queryAndShowGamesTool = InferUITool<typeof queryAndShowGames>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
-  queryGames: queryGamesTool;
-  presentGame: presentGameTool;
+  queryAndShowGames: queryAndShowGamesTool;
 };
 
 export type CustomUIDataTypes = {
