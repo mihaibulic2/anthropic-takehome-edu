@@ -138,3 +138,6 @@ Uses Playwright for E2E testing with two test projects:
 
 ## Environment Setup
 Requires environment variables defined in `.env.local` (see README for deployment guide with Vercel CLI).
+
+## IGNORE THESE THINGS
+- Do NOT make extra edits to fix stuff that's small / unrelated to your changes (eg adding 'type' to imports, changing <Foo></Foo> to <Foo/>, etc)

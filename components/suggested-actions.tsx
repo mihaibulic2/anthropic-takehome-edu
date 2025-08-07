@@ -20,24 +20,24 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: 'What is 7 times 8?',
+      label: 'I need help with multiplication',
+      action: 'What is 7 times 8? I need help with multiplication tables.',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
+      title: 'How do you add fractions?',
+      label: 'Like 1/2 + 1/4',
+      action: 'How do you add fractions like 1/2 + 1/4?',
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
-      action: `Help me write an essay about silicon valley`,
+      title: 'What does the word',
+      label: 'magnificent mean?',
+      action: 'What does the word magnificent mean? Can you explain it simply?',
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
+      title: 'Help me practice',
+      label: 'telling time on clocks',
+      action: 'Help me practice telling time on clocks. What time is 3:15?',
     },
   ];
 
