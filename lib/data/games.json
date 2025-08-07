@@ -2,7 +2,7 @@
   "coreGames": [
     {
       "id": "floating-tapper",
-      "description": "Objects float around screen in random patterns, user taps correct answers",
+      "description": "Objects float around screen in random patterns, user taps correct answers. Questions can be up to up to 100 characters. Can have up to 4 answers (only 1 is correct), each answer must be under 16 characters",
       "supportedStyles": {
         "underwater": "Fish swim in curved paths, tapping triggers fishing rod animation from boat at top center",
         "space": "Asteroids drift toward bottom center, tapping fires laser beam to destroy target",

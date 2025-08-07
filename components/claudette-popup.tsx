@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
@@ -24,6 +24,61 @@ export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [gameCode, setGameCode] = useState<string | null>(null);
+
+  // Handle question generation requests from game iframe
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data.type === 'GENERATE_QUESTIONS') {
+        const { requestId, gameProps, count, formatSpec, isFirstGeneration } = event.data;
+        
+        try {
+          const response = await fetch('/api/generate-questions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              gameProps,
+              count,
+              formatSpec,
+              isFirstGeneration
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          // Send questions back to the iframe
+          const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'QUESTIONS_GENERATED',
+              requestId,
+              questions: data.questions || []
+            }, '*');
+          }
+        } catch (error) {
+          console.error('Failed to generate questions:', error);
+          
+          // Send error back to the iframe
+          const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'QUESTIONS_ERROR',
+              requestId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }, '*');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const handlePlay = async () => {
     if (gameCode) {

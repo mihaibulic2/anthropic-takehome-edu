@@ -51,6 +51,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - [x] on game dismisses (X'd or finished playing), fire callback which sends sys msg saying game is done (and how it went)
     - [x] have shared libs folder
     - [x] have folder for each core game 
+- [ ] add real dynamic data
 
 ### Milestone 7: Game Expansion
 - [ ] add all other styles for 1st game

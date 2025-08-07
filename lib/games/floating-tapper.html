@@ -235,15 +235,28 @@
         // Setup close detection to send stats when game closes
         GameUtils.setupCloseDetection();
         
-        // Get questions from shared utils
-        const gameQuestions = GameUtils.getQuestions(8);
-        setQuestions(gameQuestions);
+        // Generate questions using LLM API
+        const initializeQuestions = async () => {
+          const formatSpec = `Each question should be returned in this exact JSON format:
+{
+  "question": "What is 5 + 3?",
+  "answers": ["6", "7", "8", "9"], 
+  "correctAnswerIndex": 2
+}
+Must have 2-4 distinct answers. correctAnswerIndex indicates 0-based index in answers array that is correct (must >=0 and < answers.length)`;
+          
+          const gameQuestions = await GameUtils.generateQuestions(props, 8, formatSpec, true);
+          
+          setQuestions(gameQuestions);
+          
+          // Start first question
+          if (gameQuestions.length > 0) {
+            startQuestion(gameQuestions[0], 0);
+            setGameStarted(true);
+          }
+        };
         
-        // Start first question
-        if (gameQuestions.length > 0) {
-          startQuestion(gameQuestions[0], 0);
-          setGameStarted(true);
-        }
+        initializeQuestions();
         
         // Start animation loop
         animationFrameRef.current = requestAnimationFrame(updateFloatingAnswers);
@@ -262,9 +275,42 @@
         // Create floating answers based on style
         const containerWidth = window.innerWidth;
         const containerHeight = window.innerHeight;
+        const MIN_X = 200;
+        const MIN_Y = 200;
+        const MIN_DISTANCE = 120; // Manhattan distance between items
+        
+        const placedPositions = [];
+        
+        const getValidPosition = (width, height, itemWidth, itemHeight, attempts = 100) => {
+          for (let i = 0; i < attempts; i++) {
+            const x = MIN_X + Math.random() * (width - itemWidth - MIN_X);
+            const y = MIN_Y + Math.random() * (height - itemHeight - MIN_Y);
+            
+            // Check distance from all previously placed items
+            let validPosition = true;
+            for (const pos of placedPositions) {
+              const manhattanDistance = Math.abs(x - pos.x) + Math.abs(y - pos.y);
+              if (manhattanDistance < MIN_DISTANCE) {
+                validPosition = false;
+                break;
+              }
+            }
+            
+            if (validPosition) {
+              placedPositions.push({ x, y });
+              return { x, y };
+            }
+          }
+          
+          // Fallback: return a position even if not ideal
+          const x = MIN_X + Math.random() * (width - itemWidth - MIN_X);
+          const y = MIN_Y + Math.random() * (height - itemHeight - MIN_Y);
+          placedPositions.push({ x, y });
+          return { x, y };
+        };
         
         const answers = GameUtils.shuffleArray(question.answers).map((answer, i) => {
-          const position = GameUtils.getRandomPosition(containerWidth, containerHeight, 80, 80, 100);
+          const position = getValidPosition(containerWidth, containerHeight, 80, 80);
           const assetIndex = i % currentConfig.answerAssets.length;
           const asset = currentConfig.answerAssets[assetIndex];
           
@@ -630,7 +676,7 @@
           }, !answer.asset ? answer.text : React.createElement('div', {
             style: {
               position: 'absolute',
-              bottom: '5px',
+              top: '85px',
               left: '50%',
               transform: 'translateX(-50%)',
               background: 'rgba(0,0,0,0.8)',
@@ -638,7 +684,12 @@
               padding: '2px 8px',
               borderRadius: '4px',
               fontSize: '14px',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              maxWidth: '120px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
             }
           }, answer.text));
         }),
