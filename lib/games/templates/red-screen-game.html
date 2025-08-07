@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script>
+    const { useState, useEffect } = React;
+    
+    function Game() {
+      const [questions, setQuestions] = useState([]);
+      const [isLoading, setIsLoading] = useState(false);
+      const [error, setError] = useState(null);
+      
+      // Game props injected by server
+      const props = {{GAME_PROPS}};
+      
+      // Function to request questions from parent window (LLM API)
+      const fetchQuestions = async () => {
+        setIsLoading(true);
+        setError(null);
+        
+        const requestId = 'req-' + Date.now();
+        
+        // Send request to parent window
+        window.parent.postMessage({
+          type: 'REQUEST_LLM',
+          requestId: requestId,
+          prompt: `Generate 5 educational questions for topic: ${props.questionSpec}. Format as JSON array of objects with 'question' and 'answer' properties.`,
+          gameContext: {
+            gameId: props.gameId,
+            selectedStyle: props.selectedStyle,
+            questionSpec: props.questionSpec
+          }
+        }, '*');
+        
+        // Listen for response
+        const handleMessage = (event) => {
+          if (event.data.type === 'LLM_RESPONSE' && event.data.requestId === requestId) {
+            window.removeEventListener('message', handleMessage);
+            setIsLoading(false);
+            
+            if (event.data.error) {
+              setError(event.data.error);
+            } else {
+              try {
+                const questionsData = JSON.parse(event.data.response);
+                setQuestions(questionsData);
+              } catch (e) {
+                // Fallback: treat response as plain text and split
+                const lines = event.data.response.split('\\n').filter(line => line.trim());
+                const fallbackQuestions = lines.map((line, i) => ({
+                  question: line,
+                  answer: `Answer ${i + 1}`
+                }));
+                setQuestions(fallbackQuestions);
+              }
+            }
+          }
+        };
+        
+        window.addEventListener('message', handleMessage);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          window.removeEventListener('message', handleMessage);
+          if (isLoading) {
+            setIsLoading(false);
+            setError('Request timeout');
+          }
+        }, 10000);
+      };
+      
+      return React.createElement('div', {
+        className: 'min-h-screen bg-red-500 p-8 text-black'
+      }, [
+        React.createElement('div', {
+          key: 'header',
+          className: 'max-w-4xl mx-auto'
+        }, [
+          React.createElement('h1', {
+            key: 'title',
+            className: 'text-4xl font-bold mb-4'
+          }, 'Red Screen Game - Props Display'),
+          
+          React.createElement('div', {
+            key: 'props',
+            className: 'bg-white bg-opacity-20 rounded-lg p-6 mb-6'
+          }, [
+            React.createElement('h2', {
+              key: 'props-title',
+              className: 'text-2xl font-semibold mb-4'
+            }, 'Game Properties:'),
+            React.createElement('div', {
+              key: 'props-list',
+              className: 'grid grid-cols-1 md:grid-cols-2 gap-4 text-lg'
+            }, [
+              React.createElement('div', { key: 'gameId' }, `Game ID: ${props.gameId}`),
+              React.createElement('div', { key: 'selectedStyle' }, `Selected Style: ${props.selectedStyle}`),
+              React.createElement('div', { key: 'matchScore' }, `Match Score: ${Math.round(props.matchScore * 100)}%`),
+              React.createElement('div', { key: 'name' }, `Game Name: ${props.name}`),
+              React.createElement('div', { key: 'questionSpec', className: 'md:col-span-2' }, `Question Spec: ${props.questionSpec}`),
+              React.createElement('div', { key: 'requiredQuestions', className: 'md:col-span-2' }, `Required Questions: ${props.requiredQuestions}`),
+              React.createElement('div', { key: 'message', className: 'md:col-span-2' }, `Claudette Message: "${props.message}"`)
+            ])
+          ]),
+          
+          React.createElement('div', {
+            key: 'llm-section',
+            className: 'bg-white bg-opacity-20 rounded-lg p-6'
+          }, [
+            React.createElement('h2', {
+              key: 'llm-title',
+              className: 'text-2xl font-semibold mb-4'
+            }, 'LLM Integration Test:'),
+            
+            React.createElement('button', {
+              key: 'fetch-btn',
+              onClick: fetchQuestions,
+              disabled: isLoading,
+              className: 'bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed mb-4'
+            }, isLoading ? 'Loading Questions...' : 'Generate Questions from LLM'),
+            
+            error && React.createElement('div', {
+              key: 'error',
+              className: 'bg-red-800 text-white p-4 rounded-lg mb-4'
+            }, `Error: ${error}`),
+            
+            questions.length > 0 && React.createElement('div', {
+              key: 'questions',
+              className: 'space-y-3'
+            }, [
+              React.createElement('h3', {
+                key: 'questions-title',
+                className: 'text-xl font-semibold'
+              }, 'Generated Questions:'),
+              ...questions.map((q, i) => 
+                React.createElement('div', {
+                  key: `q-${i}`,
+                  className: 'bg-white bg-opacity-30 p-3 rounded'
+                }, [
+                  React.createElement('div', { key: 'question' }, `Q${i + 1}: ${q.question || q}`),
+                  q.answer && React.createElement('div', { 
+                    key: 'answer',
+                    className: 'text-sm opacity-80 mt-1'
+                  }, `A: ${q.answer}`)
+                ])
+              )
+            ])
+          ])
+        ])
+      ]);
+    }
+    
+    // Render the game
+    ReactDOM.render(React.createElement(Game), document.getElementById('root'));
+  </script>
+</body>
+</html>

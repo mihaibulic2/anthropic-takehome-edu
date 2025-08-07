@@ -29,15 +29,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - [x] presentGame = will show claudette UI and allows 1 press gameplay
 
 ### Milestone 3: Game Discovery
-- [ ] M3: add queryGame API
-    - [ ] v0: just call Claude with list of all games and the reqs, ask it to reply w/ sorted list of options and score for match
-    - [ ] **LATER** v1: (if we succeed in making 100+ games, revisit to use RAG)
+- [x] M3: add queryGame API
+    - [x] v0: just call Claude with list of all games and the reqs, ask it to reply w/ sorted list of options and score for match
+    - [ ] **LATER?** v1: (if we succeed in making 100+ games, revisit to use RAG)
 
 ### Milestone 4: User Interface
-- [ ] M4: add UI for claudette
-    - [ ] on presentGame = show popup w/ cute crab and it's message
-        - [ ] call fetchGame immediately in background
-    - [ ] onClick = show loading, finish fetchGame, then show the game
+- [x] M4: add UI for claudette
+    - [x] on presentGame = show popup w/ cute crab and it's message
+        - [x] call fetchGame immediately in background
+    - [x] onClick = show loading, finish fetchGame, then show the game
 
 ### Milestone 5: Game Fetching and Core Structure
 - [ ] M5: add API to fetchGame (on presentGame call)

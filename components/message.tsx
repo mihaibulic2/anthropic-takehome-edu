@@ -1,7 +1,7 @@
 'use client';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -19,6 +19,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useClaudette } from './claudette-provider';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -43,12 +44,26 @@ const PurePreviewMessage = ({
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const { showClaudettePopup } = useClaudette();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === 'file',
   );
 
   useDataStream();
+
+  // Track which tool results we've already shown popups for
+  const shownPopupsRef = useRef(new Set<string>());
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <AnimatePresence>
@@ -69,7 +84,7 @@ const PurePreviewMessage = ({
           )}
         >
           {message.role === 'assistant' && (
-            <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
+            <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
               <div className="translate-y-px">
                 <SparklesIcon size={14} />
               </div>
@@ -138,7 +153,7 @@ const PurePreviewMessage = ({
                       <div
                         data-testid="message-content"
                         className={cn('flex flex-col gap-4', {
-                          'bg-primary text-primary-foreground px-3 py-2 rounded-xl':
+                          'bg-secondary text-secondary-foreground px-4 py-3 rounded-xl':
                             message.role === 'user',
                         })}
                       >
@@ -295,10 +310,29 @@ const PurePreviewMessage = ({
                   if (output.results && output.results.length > 0) {
                     const topGame = output.results[0];
                     
-                    // Show popup immediately when tool output becomes available
-                    setTimeout(() => {
-                      alert(`🦀 Claudette says: ${topGame.message}\n\nGame: ${topGame.name}\nID: ${topGame.gameId}\nStyle: ${topGame.selectedStyle}\nMatch Score: ${(topGame.matchScore * 100).toFixed(0)}%`);
-                    }, 100);
+                    // Only show popup once per toolCallId
+                    if (!shownPopupsRef.current.has(toolCallId)) {
+                      shownPopupsRef.current.add(toolCallId);
+                      
+                      // Clear any existing timeout
+                      if (timeoutRef.current) {
+                        clearTimeout(timeoutRef.current);
+                      }
+                      
+                      // Set new timeout
+                      timeoutRef.current = setTimeout(() => {
+                        showClaudettePopup({
+                          gameId: topGame.gameId,
+                          selectedStyle: topGame.selectedStyle,
+                          questionSpec: topGame.questionSpec,
+                          requiredQuestions: topGame.requiredQuestions,
+                          matchScore: topGame.matchScore,
+                          name: topGame.name,
+                          message: topGame.message
+                        });
+                        timeoutRef.current = null;
+                      }, 100);
+                    }
 
                     return (
                       <div key={toolCallId} className="p-3 border rounded bg-green-50">
@@ -309,7 +343,7 @@ const PurePreviewMessage = ({
                           Top match: <strong>{topGame.name}</strong> ({(topGame.matchScore * 100).toFixed(0)}% match)
                         </div>
                         <div className="text-xs text-green-600 mt-1">
-                          Claudette will show you the game popup in a moment! 🦀
+                          Claudette will show you the game popup! 🦀
                         </div>
                       </div>
                     );
@@ -410,9 +444,6 @@ export const ThinkingMessage = () => {
       <div
         className={cx(
           'flex gap-4 group-data-[role=user]/message:px-3 w-full group-data-[role=user]/message:w-fit group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:py-2 rounded-xl',
-          {
-            'group-data-[role=user]/message:bg-muted': true,
-          },
         )}
       >
         <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">

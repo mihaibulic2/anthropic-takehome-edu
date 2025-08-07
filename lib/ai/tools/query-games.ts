@@ -70,8 +70,8 @@ Use the INFORMATION above to pick the best suited game from the AVAILABLE GAMES 
    - Data format suitability for the sample questions (15% weight)
 
 - Other details about output:
-   - Include a short fun name for the game (name)
-   - Include a very short cute message for 'Claudette the curious crab' to say to the student to pitch this game (message)
+   - Include a short fun name for the game (ideally a pun or something clever that's kid-friendly and we can show the user) (key: name)
+   - Include a VERY SHORT (max 8-10 words) cute message for 'Claudette the curious crab' to the user to introduce, pitch, and call to action for this game. Should be excited, encouraging, and mention it's a game to play, like "Let's practice with space adventures!" (key: message)
    - Only include games with match score >= 0.3
    - Sort by match score (highest first)
    - Limit to top 2 results (or less if there are not enough)
@@ -86,8 +86,9 @@ Return the results in exactly this JSON format:
       "questionSpec": "<string explaining type / format of question and answers>",
       "requiredQuestions": "<string with questions / answers the MUST be included>",
       "matchScore": <0.0-1.0>,
-      "name": "<short fun name for the game>",
-      "message": "<very short cute message for 'Claudette the curious crab' to say to the student to pitch this game>"
+      "name": "<short fun name for the game to show the user, kid-friendly>",
+      "message": "<very short cute message from 'Claudette the curious crab' to show the user to introduce, pitch, and call to action for this game>",
+      "isNew": <boolean from the selected game's isNew field>
     }
   ]
 }
