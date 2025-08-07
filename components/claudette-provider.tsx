@@ -32,7 +32,7 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
     setGameData(null);
   }, []);
 
-  // Handle LLM requests from games
+  // Handle LLM requests and game completion from games
   const handleGameMessage = useCallback(async (event: MessageEvent) => {
     if (event.data.type === 'REQUEST_LLM') {
       try {
@@ -67,6 +67,14 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
           }, '*');
         }
       }
+    } else if (event.data.type === 'GAME_COMPLETED') {
+      // Handle game completion stats
+      console.log('Game completed:', event.data);
+      
+      // Show popup notification for testing
+      alert(`Game Stats Received!\n\nCompleted: ${event.data.completed}\nScore: ${event.data.stats.correctAnswers}/${event.data.stats.questionsAttempted}\nAccuracy: ${event.data.stats.accuracy}%\nTime: ${event.data.stats.timeSpent}s`);
+      
+      // TODO: Eventually send as system message to LLM
     }
   }, []);
 

@@ -1,7 +1,7 @@
 {
   "coreGames": [
     {
-      "id": "floating_tapper",
+      "id": "floating-tapper",
       "description": "Objects float around screen in random patterns, user taps correct answers",
       "supportedStyles": {
         "underwater": "Fish swim in curved paths, tapping triggers fishing rod animation from boat at top center",
@@ -17,7 +17,7 @@
       }
     },
     {
-      "id": "side_scroller",
+      "id": "side-scroller",
       "description": "Player-controlled character moves left/right, collides with objects to select them",
       "supportedStyles": {
         "underwater": "Shark swims through coral reef, collects fish that swim in schools",
@@ -33,7 +33,7 @@
       }
     },
     {
-      "id": "drag_sorter",
+      "id": "drag-sorter",
       "description": "User drags items from source area into labeled buckets or categories",
       "supportedStyles": {
         "underwater": "Drag sea creatures into different coral formations",
@@ -50,7 +50,7 @@
       }
     },
     {
-      "id": "sequence_builder",
+      "id": "sequence-builder",
       "description": "User drags items into slots to build correct order from left to right",
       "supportedStyles": {
         "space": "Arrange rocket stages in launch sequence",
@@ -67,7 +67,7 @@
       }
     },
     {
-      "id": "matching_pairs",
+      "id": "matching-pairs",
       "description": "Grid of face-down cards, flip two at a time to find matches",
       "supportedStyles": {
         "underwater": "Ocean-themed cards with shell and coral borders",
@@ -83,7 +83,7 @@
       }
     },
     {
-      "id": "slider_adjuster",
+      "id": "slider-adjuster",
       "description": "User moves sliders or dials to set correct numerical values",
       "supportedStyles": {
         "space": "Control panel dials on spaceship dashboard",
@@ -100,7 +100,7 @@
       }
     },
     {
-      "id": "puzzle_assembler",
+      "id": "puzzle-assembler",
       "description": "User drags puzzle pieces into correct positions to complete image or diagram",
       "supportedStyles": {
         "space": "Assemble constellation maps or solar system diagrams",
@@ -116,7 +116,7 @@
       }
     },
     {
-      "id": "fill_blanks",
+      "id": "fill-blanks",
       "description": "Sentence or equation appears with missing words/numbers, user types or selects from word bank",
       "supportedStyles": {
         "underwater": "Message in a bottle with missing words to complete",
@@ -133,7 +133,7 @@
       }
     },
     {
-      "id": "path_tracer",
+      "id": "path-tracer",
       "description": "User draws line connecting dots or following path in correct sequence",
       "supportedStyles": {
         "underwater": "Trace submarine route through ocean obstacles",
@@ -150,7 +150,7 @@
       }
     },
     {
-      "id": "balance_scale",
+      "id": "balance-scale",
       "description": "User adds/removes items from two sides of scale to achieve balance or comparison",
       "supportedStyles": {
         "space": "Zero-gravity balance platform with floating objects",

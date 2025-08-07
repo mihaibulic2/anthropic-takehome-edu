@@ -53,8 +53,20 @@ export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
   };
 
   const handleCloseGame = () => {
-    setIsPlaying(false);
-    // Keep gameCode cached in case they want to play again
+    // Notify the game it's about to close so it can send stats
+    const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'GAME_CLOSING'
+      }, '*');
+      
+      // Give the game a moment to send stats before closing
+      setTimeout(() => {
+        onClose(); // Close the entire popup
+      }, 100);
+    } else {
+      onClose(); // Close the entire popup
+    }
   };
 
   // Game modal (full screen)
@@ -69,7 +81,7 @@ export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
           >
             <X size={20} />
           </button>
-          <iframe
+        <iframe
             srcDoc={gameCode}
             className="w-full h-full border-0"
             sandbox="allow-scripts allow-modals"

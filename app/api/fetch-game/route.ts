@@ -7,9 +7,35 @@ export async function POST(request: Request) {
     
     console.log('fetchGame called with:', gameProps);
     
-    // For now, always use the red-screen-game template
-    const templatePath = path.join(process.cwd(), 'lib/games/templates/red-screen-game.html');
-    let gameCode = fs.readFileSync(templatePath, 'utf8');
+    // Route to appropriate game template based on gameId
+    const gameId = gameProps.gameId || 'red-screen-game';
+    const gameFileName = `${gameId}.html`;
+    const templatePath = path.join(process.cwd(), 'lib/games', gameFileName);
+    
+    let gameCode = '';
+    
+    // Try to load the specific game template
+    try {
+      gameCode = fs.readFileSync(templatePath, 'utf8');
+    } catch (templateError) {
+      console.log(`Template ${gameFileName} not found, falling back to red-screen-game.html`);
+      const fallbackPath = path.join(process.cwd(), 'lib/games/red-screen-game.html');
+      gameCode = fs.readFileSync(fallbackPath, 'utf8');
+    }
+    
+    // Load shared game utilities
+    const sharedUtilsPath = path.join(process.cwd(), 'lib/games/shared/utils.js');
+    const sharedUtils = fs.readFileSync(sharedUtilsPath, 'utf8');
+    
+    // Inject shared utilities into the game
+    // Insert after the existing script tags but before the game script
+    const scriptInsertPoint = gameCode.lastIndexOf('</head>');
+    if (scriptInsertPoint !== -1) {
+      const beforeHead = gameCode.substring(0, scriptInsertPoint);
+      const afterHead = gameCode.substring(scriptInsertPoint);
+      
+      gameCode = `${beforeHead}  <script>\n${sharedUtils}\n  </script>\n${afterHead}`;
+    }
     
     // Replace template variables with actual game props
     gameCode = gameCode.replace('{{GAME_PROPS}}', JSON.stringify(gameProps));

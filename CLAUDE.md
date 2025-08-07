@@ -34,43 +34,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - [ ] **LATER?** v1: (if we succeed in making 100+ games, revisit to use RAG)
 
 ### Milestone 4: User Interface
-- [x] M4: add UI for claudette
+- [x] add UI for claudette
     - [x] on presentGame = show popup w/ cute crab and it's message
         - [x] call fetchGame immediately in background
     - [x] onClick = show loading, finish fetchGame, then show the game
 
 ### Milestone 5: Game Fetching and Core Structure
-- [ ] M5: add API to fetchGame (on presentGame call)
-    - [ ] have claude code opus 4.1 go off and make core structure for games
-        - [ ] TECH: react/tailwind (OR vanilla single file html/css/js web apps), No server-side components or APIs - everything runs client-side, Games reset when page refreshes, No browser storage (localStorage/sessionStorage): games use in-memory state only, External scripts only from cdnjs.cloudflare.com, available libs: three.js (for 3d), canvas (for 2d), lucide react icons, mathjs, lodash, tone.js, recahrts, d2, plotly
-        - [ ] come up w/ arch for the game? (somehow can package this into a web reply for the client??)
-        - [ ] have shared libs folder
-        - [ ] have folder for each core game 
-            - [ ] add params for: topic + level + data + art (anything else?)
-- [ ] M5: add 1st REAL game (1 core game, 1 hardcoded topic, 1 mvp art style)
-    - [ ] on game dismisses (X'd or finished playing), fire callback which sends sys msg saying game is done (and how it went)
+- [x] add API to fetchGame (on presentGame call)
+    - [x] have claude code opus 4.1 go off and make core structure for games
+        - [x] TECH: react/tailwind (OR vanilla single file html/css/js web apps), No server-side components or APIs - everything runs client-side, Games reset when page refreshes, No browser storage (localStorage/sessionStorage): games use in-memory state only, External scripts only from cdnjs.cloudflare.com, available libs: three.js (for 3d), canvas (for 2d), lucide react icons, mathjs, lodash, tone.js, recahrts, d2, plotly
+        - [x] come up w/ arch for the game? (somehow can package this into a web reply for the client??)
+        - [x] add params for: topic + level + data + art (anything else?)
 
-### Milestone 6: Game Expansion
-- [ ] M6: add more games
-    - [ ] ask claude/gpt to make a list of many games/variants
-        - [ ] ~10 core games 
-            - [ ] look at Prodigy Math, Khan Academy Kids for games to copy
-        - [ ] ~10 different popular art styles for each
-    - [ ] Iterate list of shared libs necessities (eg physics, art, scoring, etc)
+### Milestone 6: First Real Game
+- [x] add 1st REAL game (1 core game, 1 hardcoded topic, 1 mvp art style)
+    - [x] on game dismisses (X'd or finished playing), fire callback which sends sys msg saying game is done (and how it went)
+    - [x] have shared libs folder
+    - [x] have folder for each core game 
+
+### Milestone 7: Game Expansion
+- [ ] add all other styles for 1st game
+- [ ] add more games
+    - [ ] iterate list of shared libs necessities (eg physics, art, scoring, etc)
         - [ ] inc LLM "generateData" call (takes in core game type, art style, subject, grade level, state standard, difficulty, topic, sample questions, past performance) (calls Claude, gets json rep of questions)
-    - [ ] Make 2 core games+ 2 art styles
-        - [ ] play test all combos!
-    - [ ] Make 8 more core games (these are all separate game IDs) (and make shared libs as previously discussed and more as needed)
-    - [ ] Make 8 more art styles
-        - [ ] have it give list of required asset specs
-        - [ ] generate assets separately + drop in
-    - [ ] Add all details to tool_call spec
-        - [ ] list all core games
-        - [ ] list all art styles
-        - [ ] list all topics + difficulty (give examples?)
+    - [ ] make 8 more core games + 4 styles for each (these are all separate game IDs) (and make shared libs as previously discussed and more as needed)
 
-### Milestone 7: Deployment and Testing
-- [ ] M7: deploy + play test - make this set of milestones our main task list (note M1, ie milestone 1 is done)
+### Milestone 8: Deployment and Testing
+- [ ] M8: deploy + play test - make this set of milestones our main task list (note M1, ie milestone 1 is done)
 
 ## Development Commands
 
