@@ -70,6 +70,14 @@ export function DataStreamHandler() {
               status: 'idle',
             };
 
+          case 'data-gamePopup': {
+            // TODO M4: Replace this alert with actual Claudette popup component
+            const gameData = delta.data;
+            console.log('🦀 CLIENT received game popup data:', gameData);
+            alert(`🦀 Claudette says: ${gameData.message}\n\nGame: ${gameData.gameId}\nTopic: ${gameData.topic}\nLevel: ${gameData.level}\nStyle: ${gameData.style}`);
+            return draftArtifact;
+          }
+
           default:
             return draftArtifact;
         }

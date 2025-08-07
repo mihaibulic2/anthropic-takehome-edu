@@ -21,7 +21,9 @@ test.describe
 
       while (request) {
         chain.unshift(request.url());
-        request = request.redirectedFrom();
+        const tempReq = request.redirectedFrom();
+        if (!tempReq) break;
+        request = tempReq;
       }
 
       expect(chain).toEqual([
@@ -63,7 +65,9 @@ test.describe
 
       while (request) {
         chain.unshift(request.url());
-        request = request.redirectedFrom();
+        const tempReq = request.redirectedFrom();
+        if (!tempReq) break;
+        request = tempReq;
       }
 
       expect(chain).toEqual(['http://localhost:3000/']);
