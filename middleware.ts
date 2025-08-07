@@ -13,8 +13,22 @@ export async function middleware(request: NextRequest) {
     return new Response('pong', { status: 200 });
   }
 
+  // Allow password gate API and page
+  if (pathname.startsWith('/api/password-gate') || pathname === '/password-gate') {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith('/api/auth')) {
     return NextResponse.next();
+  }
+
+  // Check for prototype password gate
+  const prototypePassword = process.env.PROTOTYPE_PASSWORD;
+  if (prototypePassword) {
+    const hasAccess = request.cookies.get('prototype-access')?.value === 'granted';
+    if (!hasAccess) {
+      return NextResponse.redirect(new URL('/password-gate', request.url));
+    }
   }
 
   const token = await getToken({
@@ -47,6 +61,7 @@ export const config = {
     '/api/:path*',
     '/login',
     '/register',
+    '/password-gate',
 
     /*
      * Match all request paths except for the ones starting with:

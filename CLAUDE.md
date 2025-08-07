@@ -68,3 +68,62 @@ Uses Playwright for E2E testing with two test projects:
 
 ## Environment Setup
 Requires environment variables defined in `.env.local` (see README for deployment guide with Vercel CLI).
+
+## Project Milestones and Development Roadmap
+
+### Milestone 1: Local Chat / Claude Stand-in
+- [x] M1: get barebones local chat / claude stand-in
+    - [x] pick one: [vercel](https://github.com/vercel)[ai-chatbot](https://github.com/vercel/ai-chatbot)
+    - [x] fork it + deploy
+    - [x] run locally
+    - [x] add claude, set as default
+    - [x] security
+
+### Milestone 2: Game API and Tooling
+- [ ] M2: add tool calls for queryGames + presentGame
+    - [ ] queryGames API = will search available games, params: topic (eg times tables), age level (eg 5th grade), location (eg CA, for standards look-up), format (eg dinosaurs, strategy, etc)
+    - [ ] presentGame = will show claudette UI and allows 1 press gameplay
+
+### Milestone 3: Game Discovery
+- [ ] M3: add queryGame API
+    - [ ] v0: just call Claude with list of all games and the reqs, ask it to reply w/ sorted list of options and score for match
+    - [ ] **LATER** v1: (if we succeed in making 100+ games, revisit to use RAG)
+
+### Milestone 4: User Interface
+- [ ] M4: add UI for claudette
+    - [ ] on presentGame = show popup w/ cute crab and it's message
+        - [ ] call fetchGame immediately in background
+    - [ ] onClick = show loading, finish fetchGame, then show the game
+
+### Milestone 5: Game Fetching and Core Structure
+- [ ] M5: add API to fetchGame (on presentGame call)
+    - [ ] have claude code opus 4.1 go off and make core structure for games
+        - [ ] TECH: react/tailwind (OR vanilla single file html/css/js web apps), No server-side components or APIs - everything runs client-side, Games reset when page refreshes, No browser storage (localStorage/sessionStorage): games use in-memory state only, External scripts only from cdnjs.cloudflare.com, available libs: three.js (for 3d), canvas (for 2d), lucide react icons, mathjs, lodash, tone.js, recahrts, d2, plotly
+        - [ ] come up w/ arch for the game? (somehow can package this into a web reply for the client??)
+        - [ ] have shared libs folder
+        - [ ] have folder for each core game 
+            - [ ] add params for: topic + level + data + art (anything else?)
+- [ ] M5: add 1st REAL game (1 core game, 1 hardcoded topic, 1 mvp art style)
+    - [ ] on game dismisses (X'd or finished playing), fire callback which sends sys msg saying game is done (and how it went)
+
+### Milestone 6: Game Expansion
+- [ ] M6: add more games
+    - [ ] ask claude/gpt to make a list of many games/variants
+        - [ ] ~10 core games 
+            - [ ] look at Prodigy Math, Khan Academy Kids for games to copy
+        - [ ] ~10 different popular art styles for each
+    - [ ] Iterate list of shared libs necessities (eg physics, art, scoring, etc)
+        - [ ] inc LLM "generateData" call (takes in core game type, art style, subject, grade level, state standard, difficulty, topic, sample questions, past performance) (calls Claude, gets json rep of questions)
+    - [ ] Make 2 core games+ 2 art styles
+        - [ ] play test all combos!
+    - [ ] Make 8 more core games (these are all separate game IDs) (and make shared libs as previously discussed and more as needed)
+    - [ ] Make 8 more art styles
+        - [ ] have it give list of required asset specs
+        - [ ] generate assets separately + drop in
+    - [ ] Add all details to tool_call spec
+        - [ ] list all core games
+        - [ ] list all art styles
+        - [ ] list all topics + difficulty (give examples?)
+
+### Milestone 7: Deployment and Testing
+- [ ] M7: deploy + play test - make this set of milestones our main task list (note M1, ie milestone 1 is done)
