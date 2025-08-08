@@ -6,7 +6,6 @@ import gamesDatabase from '@/lib/data/games.json';
 const gameMatchSchema = z.object({
   results: z.array(z.object({
     gameId: z.string(),
-    selectedStyle: z.string(),
     questionSpec: z.string(),
     requiredQuestions: z.string(),
     matchScore: z.number().min(0).max(1),
@@ -52,8 +51,6 @@ Use the INFORMATION above to pick the best suited game from the AVAILABLE GAMES 
 
 - Consider the underlying topic in the problem to find a game that is well suited to that topic   
 
-- Choose one of the art styles supported by the game to use based on the user's preferences
-
 - Include a question spec that explains exactly the type and difficulty of the questions:
   - Example: "Multiplication tables under 10", "Government related vocab words for advanced 5th grader (word=answer, definition=question)"
   - Take into account the problem/topic the user is working on and details about the user:
@@ -66,8 +63,8 @@ Use the INFORMATION above to pick the best suited game from the AVAILABLE GAMES 
   - Useful if goal is to build up some of the challenges from a starting to ending point (include easy and final questions)
 
 - Calculate a match score (0.0 to 1.0) based on:
-   - Data format suitability for the sample questions (50% weight)
-   - Grade level appropriateness (25% weight) 
+   - Data format suitability for the questions (50% weight)
+   - Grade/Age level appropriateness (25% weight) 
    - Art style of the game matches the user's preferences (if any) (25% weight)
 
 - Other details about output:

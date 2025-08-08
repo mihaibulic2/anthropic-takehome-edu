@@ -14,14 +14,8 @@ export async function POST(request: Request) {
     
     let gameCode = '';
     
-    // Try to load the specific game template
-    try {
-      gameCode = fs.readFileSync(templatePath, 'utf8');
-    } catch (templateError) {
-      console.log(`Template ${gameFileName} not found, falling back to red-screen-game.html`);
-      const fallbackPath = path.join(process.cwd(), 'lib/games/red-screen-game.html');
-      gameCode = fs.readFileSync(fallbackPath, 'utf8');
-    }
+    // Load the specific game template
+    gameCode = fs.readFileSync(templatePath, 'utf8');
     
     // Load shared game utilities
     const sharedUtilsPath = path.join(process.cwd(), 'lib/games/shared/utils.js');

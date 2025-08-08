@@ -344,7 +344,6 @@ const PurePreviewMessage = ({
                         }
                         showClaudettePopup({
                           gameId: topGame.gameId,
-                          selectedStyle: topGame.selectedStyle,
                           questionSpec: topGame.questionSpec,
                           requiredQuestions: topGame.requiredQuestions,
                           matchScore: topGame.matchScore,

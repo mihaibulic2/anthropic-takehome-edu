@@ -5,9 +5,8 @@ import { X } from 'lucide-react';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
 
-interface GameData {
+export interface GameData {
   gameId: string;
-  selectedStyle: string;
   questionSpec: string;
   requiredQuestions: string;
   matchScore: number;

@@ -1,18 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { GamePopup } from './game-popup';
+import { GamePopup, GameData } from './game-popup';
 import { AnimatePresence } from 'framer-motion';
-
-interface GameData {
-  gameId: string;
-  selectedStyle: string;
-  questionSpec: string;
-  requiredQuestions: string;
-  matchScore: number;
-  name: string;
-  message: string;
-}
 
 interface ContextType {
   showGamePopup: (gameData: GameData) => void;
@@ -25,11 +15,6 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [latestGameStats, setLatestGameStats] = useState<any>(null);
   const sendGameStatsRef = useRef<((stats: any) => void) | null>(null);
-
-
-  const showGamePopup = useCallback((gameData: GameData) => {
-    setGameData(gameData);
-  }, []);
 
   const registerSendGameStats = useCallback((sendStats: (stats: any) => void) => {
     sendGameStatsRef.current = sendStats;
@@ -96,7 +81,7 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
   }, [handleGameMessage]);
 
   return (
-    <ClaudetteContext.Provider value={{ showGamePopup, registerSendGameStats }}>
+    <ClaudetteContext.Provider value={{ showGamePopup: setGameData, registerSendGameStats }}>
       {children}
       <AnimatePresence>
         {gameData && (

@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Space Courier: Knowledge Mission</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; background: #000; }
+        #gameUI { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        #hud { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 18px; font-weight: bold; }
+        .hud-label { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
+        #controls { position: absolute; bottom: 20px; left: 20px; color: #fff; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; border: 1px solid #00ffff; }
+        #questionModal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #00ffff; border-radius: 15px; padding: 30px; box-shadow: 0 0 30px #00ffff; pointer-events: all; min-width: 300px; text-align: center; }
+        #questionModal.very-easy { background: linear-gradient(135deg, #2a4a2e, #163e21); border-color: #00ff00; box-shadow: 0 0 30px #00ff00; }
+        #questionModal.easy { background: linear-gradient(135deg, #2a3a4e, #162e3e); border-color: #00aaff; box-shadow: 0 0 30px #00aaff; }
+        #questionModal.medium { background: linear-gradient(135deg, #1a1a2e, #16213e); border-color: #00ffff; box-shadow: 0 0 30px #00ffff; }
+        #questionModal.hard { background: linear-gradient(135deg, #3a2a2e, #3e1621); border-color: #ff00ff; box-shadow: 0 0 30px #ff00ff; }
+        #questionModal.very-hard { background: linear-gradient(135deg, #4a1a1e, #4e1016); border-color: #ff0000; box-shadow: 0 0 30px #ff0000; }
+        #questionModal h2 { color: #00ffff; margin: 0 0 20px 0; text-shadow: 0 0 10px #00ffff; }
+        #questionText { color: #fff; font-size: 32px; margin: 20px 0; font-weight: bold; }
+        #visualGrid { margin: 20px auto; display: none; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; position: relative; }
+        #visualGrid.show { display: block; }
+        .grid-container { display: inline-block; position: relative; }
+        .grid-row { display: flex; justify-content: center; }
+        .grid-item { width: 30px; height: 30px; margin: 2px; background: radial-gradient(circle, #ff9900, #663300); border-radius: 50%; box-shadow: 0 0 10px #ff6600; }
+        .grid-label-row { position: absolute; left: -40px; top: 50%; transform: translateY(-50%); color: #00ff00; font-size: 24px; font-weight: bold; }
+        .grid-label-col { position: absolute; top: -40px; left: 50%; transform: translateX(-50%); color: #00ffff; font-size: 24px; font-weight: bold; }
+        .answerBtn { display: inline-block; margin: 10px; padding: 15px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 20px; cursor: pointer; transition: all 0.3s; font-weight: bold; }
+        .answerBtn:hover { transform: scale(1.1); box-shadow: 0 0 20px rgba(102, 126, 234, 0.8); }
+        #feedback { margin-top: 20px; font-size: 18px; font-weight: bold; min-height: 30px; }
+        .correct { color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+        .incorrect { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
+        #startScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f0f1e, #1a1a3e); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
+        #startScreen h1 { color: #00ffff; font-size: 48px; text-shadow: 0 0 20px #00ffff; margin-bottom: 20px; }
+        #startBtn { padding: 20px 40px; font-size: 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 30px; cursor: pointer; transition: all 0.3s; font-weight: bold; pointer-events: all; }
+        #startBtn:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(102, 126, 234, 0.8); }
+        #speedSlider { 
+            width: 100px; 
+            margin-left: 10px; 
+            pointer-events: all; 
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+        }
+        #speedSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00ffff;
+            cursor: pointer;
+            box-shadow: 0 0 5px #00ffff;
+        }
+        #speedSlider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00ffff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 5px #00ffff;
+        }
+        .diff-very-easy { color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+        .diff-easy { color: #00aaff; text-shadow: 0 0 10px #00aaff; }
+        .diff-medium { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
+        .diff-hard { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
+        .diff-very-hard { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
+        #endScreen { position: absolute; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; flex-direction:column; background: rgba(0,0,0,0.8); z-index: 25; pointer-events: all; }
+        #endScreen h2 { color:#fff; font-size:48px; margin: 10px 0; }
+        #endScreen p { color:#fff; font-size:20px; margin: 6px 0; }
+        #restartBtn { padding: 16px 28px; font-size: 20px; border:none; border-radius:24px; background:#00ffff; color:#000; cursor:pointer; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div id="gameUI">
+        <div id="hud">
+            <div><span class="hud-label">Fuel:</span> <span id="fuel">100</span>%</div>
+            <div><span class="hud-label">Checkpoints:</span> <span id="checkpoints">0</span>/<span id="checkpointTarget">10</span></div>
+            <div><span class="hud-label">Score:</span> <span id="scoreValue">0</span></div>
+            <div><span class="hud-label">Speed:</span> <input type="range" id="speedSlider" min="1" max="5" value="3" step="1">
+                <span id="speedValue">3</span></div>
+            <div><span class="hud-label">Difficulty:</span> <span id="diffLevel" class="diff-medium">MEDIUM</span></div>
+        </div>
+        <div id="controls">
+            <div>🎮 Controls:</div>
+            <div>WASD - Move Ship</div>
+            <div>Mouse - Look Around</div>
+        </div>
+        <div id="questionModal">
+            <h2>Checkpoint Challenge!</h2>
+            <div id="visualGrid">
+                <div class="grid-label-row"></div>
+                <div class="grid-label-col"></div>
+                <div class="grid-container"></div>
+            </div>
+            <div id="questionText"></div>
+            <div id="answerButtons"></div>
+            <div id="feedback"></div>
+        </div>
+    </div>
+
+    <div id="startScreen">
+        <h1 id="gameTitle">🚀 Space Courier: Knowledge Mission</h1>
+        <p id="gameDescription" style="color: #fff; font-size: 20px; margin: 20px;">
+            Navigate through space and answer questions at checkpoints!
+        </p>
+        <button id="startBtn">Launch Mission</button>
+        <div id="loadingMessage" style="display: none; color: #00ffff; font-size: 24px; margin-top: 20px;">
+            Loading questions...
+        </div>
+    </div>
+
+    <div id="endScreen">
+        <h2 id="endTitle"></h2>
+        <p id="endSubtitle"></p>
+        <div id="endStats" style="color: #fff; font-size: 18px; margin: 20px 0;"></div>
+        <button id="continueBtn" style="padding: 16px 28px; font-size: 20px; border:none; border-radius:24px; background:#00ff00; color:#000; cursor:pointer; margin-top: 16px;">Keep Playing</button>
+        <div id="continueLoading" style="display: none; color: #00ffff; font-size: 20px; margin-top: 20px;">Loading more questions...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/games/shared/utils.js"></script>
+    <script>
+        // Game props injected by server
+        const props = {{GAME_PROPS}};
+        console.log("NEW GAME!", props);
+        
+        let scene, camera, renderer;
+        let ship, shipVelocity = new THREE.Vector3();
+        let asteroids = [];
+        let checkpoints = [];
+        let particles;
+        let keys = {};
+        let mouse = { x: 0, y: 0 };
+        let score = 0;
+        let fuel = 100;
+        let checkpointsCollected = 0;
+        let totalCheckpointsTarget = 10; // Total checkpoints needed for current round
+        let isPaused = false;
+        let currentCheckpoint = null;
+        let speed = 3;
+
+        // Difficulty tracking
+        let correctStreak = 0;
+        let incorrectStreak = 0;
+        let difficulty = 'medium';
+        
+        // Question management
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let questionsLoading = false;
+        let nextQuestionsLoading = false;
+        let nextQuestions = [];
+
+        // Object generation settings
+        const gameArea = {
+            width: 40,
+            height: 25,
+        };
+        
+        // Pre-generated objects for entire round
+        let allAsteroids = [];
+        let allCheckpoints = [];
+        let objectsGenerated = false;
+
+        // Collision rate-limit
+        let lastHitTime = 0;
+        const hitCooldown = 400; // ms
+
+        // Game state
+        let gameStarted = false;
+        let rafId = null;
+        let questionsReady = false;
+
+        function init() {
+            // Initialize game stats
+            GameUtils.initializeStats(props.gameId);
+            GameUtils.setupCloseDetection();
+            
+            // Load initial questions immediately
+            loadInitialQuestions();
+            
+            // Update game title and description from props
+            const title = props.name || 'Space Courier: Knowledge Mission';
+            document.getElementById('gameTitle').textContent = `🚀 ${title}`;
+            if (props.gameDescription) {
+                document.getElementById('gameDescription').textContent = props.gameDescription;
+            }
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x000033, 10, 200);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            scene.add(new THREE.AmbientLight(0x404040));
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 5);
+            scene.add(directionalLight);
+
+            createShip();
+            createStarfield();
+
+            // Objects will be generated when questions are ready
+
+            // Event listeners
+            document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+            document.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('resize', onResize);
+
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
+                speed = parseInt(e.target.value);
+                document.getElementById('speedValue').textContent = speed;
+            });
+
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('continueBtn').addEventListener('click', continueGame);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function createShip() {
+            const shipGroup = new THREE.Group();
+
+            const bodyGeometry = new THREE.ConeGeometry(0.5, 2, 8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00, emissive: 0x002200 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.rotation.x = Math.PI / 2;
+            shipGroup.add(body);
+
+            const wingGeometry = new THREE.BoxGeometry(3, 0.1, 1);
+            const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x0088ff, emissive: 0x001144 });
+            const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+            wings.position.z = 0.5;
+            shipGroup.add(wings);
+
+            const engineGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const engineMaterial = new THREE.MeshBasicMaterial({ color: 0xff4400, opacity: 0.8 });
+            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            engine.position.z = 1;
+            shipGroup.add(engine);
+
+            ship = shipGroup;
+            scene.add(ship);
+        }
+
+        function createStarfield() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starVertices = [];
+            for (let i = 0; i < 5000; i++) {
+                starVertices.push((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300);
+            }
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            particles = new THREE.Points(starGeometry, new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 }));
+            scene.add(particles);
+        }
+
+        // Old prism alignment function - no longer needed
+
+        function randomInRange(min, max) { return min + Math.random() * (max - min); }
+
+        function generateAllObjects() {
+            if (objectsGenerated) return;
+            
+            const startZ = 10; // Starting position
+            const endZ = startZ - 2500; // Always generate this many units forward (way overestimate what we need!)
+            const asteroidDensity = 0.3; // asteroids per unit distance
+            const checkpointDensity = 0.04; // checkpoints per unit distance (much sparser)
+            
+            // Clear existing objects
+            asteroids.forEach(asteroid => scene.remove(asteroid));
+            checkpoints.forEach(checkpoint => scene.remove(checkpoint));
+            asteroids = [];
+            checkpoints = [];
+            
+            // Calculate number of objects needed
+            const distanceSpan = Math.abs(endZ - startZ);
+            const numAsteroids = Math.floor(distanceSpan * asteroidDensity);
+            const numCheckpoints = Math.floor(distanceSpan * checkpointDensity);
+            
+            // console.log(`Generating ${numAsteroids} asteroids and ${numCheckpoints} checkpoints over ${distanceSpan} units`);
+            
+            // Generate asteroids
+            for (let i = 0; i < numAsteroids; i++) {
+                const x = randomInRange(-gameArea.width / 2, gameArea.width / 2);
+                const y = randomInRange(-gameArea.height / 2, gameArea.height / 2);
+                const z = randomInRange(endZ, startZ);
+                createAsteroid(x, y, z);
+            }
+            
+            // Generate checkpoints
+            for (let i = 0; i < numCheckpoints; i++) {
+                const x = randomInRange(-gameArea.width * 0.3, gameArea.width * 0.3); // Keep closer to center
+                const y = randomInRange(-gameArea.height * 0.3, gameArea.height * 0.3);
+                const z = randomInRange(endZ, startZ - 15); // Keep away from starting area
+                createCheckpoint(i, x, y, z);
+            }
+            
+            objectsGenerated = true;
+        }
+
+        // Old populatePrism function - replaced by generateAllObjects
+
+        function createAsteroid(x, y, z) {
+            const size = Math.random() * 2 + 0.5;
+            const geometry = new THREE.DodecahedronGeometry(size, 0);
+            const material = new THREE.MeshPhongMaterial({ color: 0x8B7355, emissive: 0x222222 });
+            const asteroid = new THREE.Mesh(geometry, material);
+
+            asteroid.position.set(x, y, z);
+            asteroid.rotation.x = Math.random() * Math.PI;
+            asteroid.rotation.y = Math.random() * Math.PI;
+
+            asteroid.userData = {
+                rotationSpeed: { x: (Math.random() - 0.5) * 0.02, y: (Math.random() - 0.5) * 0.02 }
+            };
+
+            asteroids.push(asteroid);
+            scene.add(asteroid);
+        }
+
+        function styleCheckpointByDifficulty(group, diff) {
+            const palette = {
+                'very-easy': { c1: 0x00ff00, c2: 0x00aa00 },
+                'easy': { c1: 0x00aaff, c2: 0x0088cc },
+                'medium': { c1: 0x00ffff, c2: 0xffff00 },
+                'hard': { c1: 0xff00ff, c2: 0xaa00aa },
+                'very-hard': { c1: 0xff0000, c2: 0xaa0000 }
+            };
+            const { c1, c2 } = palette[diff];
+
+            // Clear old children & rebuild ring with flair per difficulty
+            group.children.slice().forEach(ch => group.remove(ch));
+
+            // Base torus size and thickness varies with diff - harder = smaller checkpoints
+            const sizeMultiplier = {
+                'very-easy': 1.0,   // Normal size (easiest to hit)
+                'easy': 0.9,        // 10% smaller
+                'medium': 0.8,      // 20% smaller
+                'hard': 0.65,       // 35% smaller
+                'very-hard': 0.5    // 50% smaller (hardest to hit)
+            };
+            const multiplier = sizeMultiplier[diff] || 0.8;
+            const ringRadius = 3 * multiplier;
+            const tube = (diff === 'very-easy' ? 0.7 : diff === 'easy' ? 0.8 : diff === 'medium' ? 0.8 : diff === 'hard' ? 0.9 : 1.0) * multiplier;
+
+            const torus = new THREE.Mesh(
+                new THREE.TorusGeometry(ringRadius, tube, 16, 100),
+                new THREE.MeshPhongMaterial({ color: c1, emissive: c1, emissiveIntensity: 0.35 })
+            );
+            group.add(torus);
+
+            // Inner accent
+            const innerRing = new THREE.Mesh(
+                new THREE.TorusGeometry(2.2 * multiplier, 0.3 * multiplier, 8, 32),
+                new THREE.MeshPhongMaterial({ color: c2, emissive: c2, emissiveIntensity: 0.55 })
+            );
+            innerRing.rotation.x = Math.PI / 2;
+            group.add(innerRing);
+
+            // Floating particles (count scales with diff)
+            const count = diff === 'very-easy' ? 12 : diff === 'easy' ? 16 : diff === 'medium' ? 20 : diff === 'hard' ? 24 : 28;
+            for (let i = 0; i < count; i++) {
+                const particle = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.1 * multiplier, 8, 8),
+                    new THREE.MeshBasicMaterial({ color: c2 })
+                );
+                const angle = (i / count) * Math.PI * 2;
+                particle.position.x = Math.cos(angle) * (ringRadius + 0.5 * multiplier);
+                particle.position.z = Math.sin(angle) * (ringRadius + 0.5 * multiplier);
+                group.add(particle);
+            }
+
+            // Hard/Very-hard spikes for extra "danger"
+            if (diff === 'hard' || diff === 'very-hard') {
+                const spikeGeom = new THREE.ConeGeometry(0.25 * multiplier, 0.8 * multiplier, 6);
+                const spikeMat = new THREE.MeshPhongMaterial({ color: c2, emissive: c2, emissiveIntensity: 0.7 });
+                for (let i = 0; i < 10; i++) {
+                    const spike = new THREE.Mesh(spikeGeom, spikeMat);
+                    const ang = (i / 10) * Math.PI * 2;
+                    spike.position.set(Math.cos(ang) * ringRadius, 0, Math.sin(ang) * ringRadius);
+                    spike.lookAt(0, 0, 0);
+                    group.add(spike);
+                }
+            }
+
+            group.userData.difficulty = diff;
+            group.userData.innerRing = innerRing;
+            group.userData.collected = false;
+        }
+
+        function createCheckpoint(index, x = null, y = null, z = null) {
+            const group = new THREE.Group();
+            styleCheckpointByDifficulty(group, getCheckpointDifficulty());
+            
+            if (x !== null && y !== null && z !== null) {
+                group.position.set(x, y, z);
+            } else {
+                // Fallback to old positioning for compatibility
+                group.position.set((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 10, -index * 30 - 30);
+            }
+            
+            checkpoints.push(group);
+            scene.add(group);
+        }
+
+        function getCheckpointDifficulty() {
+            const diffs = ['very-easy', 'easy', 'medium', 'hard', 'very-hard'];
+            const rand = Math.random();
+            if (rand < 0.7) return difficulty;
+            if (rand < 0.85) {
+                const idx = diffs.indexOf(difficulty);
+                return idx > 0 ? diffs[idx - 1] : diffs[0];
+            }
+            const idx = diffs.indexOf(difficulty);
+            return idx < 4 ? diffs[idx + 1] : diffs[4];
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        async function loadInitialQuestions() {
+            questionsLoading = true;
+            
+            const formatSpec = `Return questions in this exact JSON format:
+{
+  "question": "What is 7 × 8?",
+  "answers": ["56", "48", "54", "63"],
+  "correctAnswerIndex": 0,
+  "difficulty": "medium"
+}
+Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard`;
+            
+            const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, true);
+            
+            if (gameQuestions && gameQuestions.length > 0) {
+                questions = gameQuestions;
+                questionsReady = true;
+                // Generate all objects now that we have questions
+                generateAllObjects();
+            } else {
+                // Fallback if no questions received
+                alert('Failed to load questions. Please refresh the page.');
+            }
+            questionsLoading = false;
+        }
+        
+        async function loadMoreQuestions() {
+            nextQuestionsLoading = true;
+            
+            const formatSpec = `Return questions in this exact JSON format:
+{
+  "question": "What is 7 × 8?",
+  "answers": ["56", "48", "54", "63"],
+  "correctAnswerIndex": 0,
+  "difficulty": "medium"
+}
+Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard
+Consider user performance in question history to adjust difficulty appropriately.`;
+            
+            const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, false);
+            
+            if (moreQuestions && moreQuestions.length > 0) {
+                nextQuestions = moreQuestions;
+            }
+            nextQuestionsLoading = false;
+        }
+        
+        function getNextQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                // Ran out of questions, use pre-fetched ones if available
+                if (nextQuestions.length > 0) {
+                    questions = nextQuestions;
+                    nextQuestions = [];
+                    currentQuestionIndex = 0;
+                }
+            }
+            
+            if (currentQuestionIndex < questions.length) {
+                const q = questions[currentQuestionIndex];
+                currentQuestionIndex++;
+                
+                // Pre-fetch more questions when running low
+                if (questions.length - currentQuestionIndex <= 3 && !nextQuestionsLoading && nextQuestions.length === 0) {
+                    loadMoreQuestions();
+                }
+                
+                return q;
+            }
+            return null;
+        }
+
+        function showQuestion(diff) {
+            const modal = document.getElementById('questionModal');
+            modal.className = diff;
+
+            const q = getNextQuestion();
+            if (!q) {
+                // No more questions available
+                endGame();
+                return;
+            }
+            
+            // Store current question for answer checking
+            modal.dataset.currentQuestion = JSON.stringify(q);
+
+            // Skip visual grid for now
+            const grid = document.getElementById('visualGrid');
+            grid.className = '';
+
+            document.getElementById('questionText').textContent = q.question;
+            document.getElementById('feedback').textContent = '';
+
+            const buttonsContainer = document.getElementById('answerButtons');
+            buttonsContainer.innerHTML = '';
+
+            q.answers.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answerBtn';
+                btn.textContent = answer;
+                btn.dataset.answerIndex = index;
+                btn.onclick = () => checkAnswer(index, q);
+                buttonsContainer.appendChild(btn);
+            });
+
+            modal.style.display = 'block';
+        }
+
+        function checkAnswer(answerIndex, question) {
+            const feedback = document.getElementById('feedback');
+            const buttons = document.querySelectorAll('.answerBtn');
+            const isCorrect = answerIndex === question.correctAnswerIndex;
+            
+            // Track the answer
+            GameUtils.trackAnswer(isCorrect);
+            GameUtils.trackQuestionHistory(question, answerIndex, isCorrect);
+            
+            // Highlight buttons
+            buttons.forEach((btn, idx) => {
+                if (idx === answerIndex && !isCorrect) {
+                    btn.style.background = 'linear-gradient(135deg, #ff4444, #cc0000)';
+                    btn.style.boxShadow = '0 0 20px rgba(255, 68, 68, 0.8)';
+                }
+                if (idx === question.correctAnswerIndex) {
+                    btn.style.background = 'linear-gradient(135deg, #44ff44, #00cc00)';
+                    btn.style.boxShadow = '0 0 20px rgba(68, 255, 68, 0.8)';
+                }
+                btn.onclick = null; // Disable further clicks
+            });
+
+            if (isCorrect) {
+                feedback.textContent = '✅ Correct! +100 points!';
+                feedback.className = 'correct';
+                score += 100;
+                fuel = Math.min(100, fuel + 10);
+                checkpointsCollected++;
+                updateDifficulty(true);
+
+                if (currentCheckpoint) {
+                    currentCheckpoint.userData.collected = true;
+                    currentCheckpoint.visible = false;
+                }
+            } else {
+                feedback.textContent = '❌ Incorrect!';
+                feedback.className = 'incorrect';
+                score = Math.max(0, score - 25);
+                updateDifficulty(false);
+            }
+            
+            // Send game stats
+            GameUtils.sendGameStats(false);
+
+                            setTimeout(() => {
+                document.getElementById('questionModal').style.display = 'none';
+                isPaused = false;
+                if (checkpointsCollected >= totalCheckpointsTarget) {
+                    winGame();
+                }
+            }, isCorrect ? 900 : 1500);
+
+            updateScore();
+            document.getElementById('checkpoints').textContent = checkpointsCollected;
+        }
+
+        function updateDifficulty(correct) {
+            if (correct) {
+                correctStreak++;
+                incorrectStreak = 0;
+                if (correctStreak >= 3) {
+                    const diffs = ['very-easy', 'easy', 'medium', 'hard', 'very-hard'];
+                    const idx = diffs.indexOf(difficulty);
+                    if (idx < 4) difficulty = diffs[idx + 1];
+                    correctStreak = 0;
+                }
+            } else {
+                incorrectStreak++;
+                correctStreak = 0;
+                if (incorrectStreak >= 2) {
+                    const diffs = ['very-easy', 'easy', 'medium', 'hard', 'very-hard'];
+                    const idx = diffs.indexOf(difficulty);
+                    if (idx > 0) difficulty = diffs[idx - 1];
+                    incorrectStreak = 0;
+                }
+            }
+
+            const elem = document.getElementById('diffLevel');
+            elem.textContent = difficulty.toUpperCase().replace('-', ' ');
+            elem.className = 'diff-' + difficulty;
+        }
+
+        function updateScore() {
+            document.getElementById('scoreValue').textContent = score;
+        }
+
+        function collectCheckpoint(checkpoint) {
+            checkpoint.userData.collected = true;
+            currentCheckpoint = checkpoint;
+            isPaused = true;
+            showQuestion(checkpoint.userData.difficulty);
+        }
+
+        function getDifficultyMultiplier() {
+            const multipliers = {
+                'very-easy': 0.75,  // 25% slower
+                'easy': 0.875,      // 12.5% slower  
+                'medium': 1.0,      // Normal speed
+                'hard': 1.5,        // 50% faster
+                'very-hard': 2.0    // 100% faster
+            };
+            return multipliers[difficulty] || 1.0;
+        }
+
+        function updateShip() {
+            if (isPaused) return;
+
+            const difficultyMultiplier = getDifficultyMultiplier();
+            const moveSpeed = 0.3 * (speed / 3) * difficultyMultiplier;
+            const forwardSpeed = 0.1 * speed * difficultyMultiplier;
+
+            if (keys['w']) shipVelocity.y = Math.min(shipVelocity.y + moveSpeed, 5);
+            if (keys['s']) shipVelocity.y = Math.max(shipVelocity.y - moveSpeed, -5);
+            if (keys['a']) shipVelocity.x = Math.max(shipVelocity.x - moveSpeed, -5);
+            if (keys['d']) shipVelocity.x = Math.min(shipVelocity.x + moveSpeed, 5);
+
+            ship.position.x += shipVelocity.x * 0.1;
+            ship.position.y += shipVelocity.y * 0.1;
+            ship.position.z -= forwardSpeed;
+
+            // Keep within lateral bounds
+            ship.position.x = Math.max(-20, Math.min(20, ship.position.x));
+            ship.position.y = Math.max(-10, Math.min(15, ship.position.y));
+
+            ship.rotation.y = Math.max(-0.5, Math.min(0.5, -mouse.x * 0.3));
+            ship.rotation.x = Math.max(-0.3, Math.min(0.3, mouse.y * 0.2));
+            ship.rotation.z = -shipVelocity.x * 0.3;
+
+            shipVelocity.x *= 0.95;
+            shipVelocity.y *= 0.95;
+
+            camera.position.x = ship.position.x * 0.3;
+            camera.position.y = ship.position.y * 0.3 + 5;
+            camera.position.z = ship.position.z + 10;
+            camera.lookAt(ship.position);
+
+            fuel = Math.max(0, fuel - 0.05 * (speed / 3));
+            document.getElementById('fuel').textContent = Math.round(fuel);
+
+            if (fuel <= 0) endGame();
+        }
+
+        function updateEnvironment() {
+            // Animate asteroids
+            asteroids.forEach(asteroid => {
+                asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
+                asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
+            });
+
+            // Animate checkpoints
+            checkpoints.forEach(checkpoint => {
+                if (!checkpoint.userData.collected) {
+                    checkpoint.rotation.y += 0.02;
+                    if (checkpoint.userData.innerRing) {
+                        checkpoint.userData.innerRing.rotation.z += 0.03;
+                    }
+                    const pulse = Math.sin(Date.now() * 0.003) * 0.1 + 1;
+                    checkpoint.scale.set(pulse, pulse, pulse);
+                }
+            });
+
+            if (particles) particles.rotation.z += 0.0001;
+
+            // No more dynamic spawning - all objects are pre-generated
+        }
+
+        function checkCollisions() {
+            if (isPaused) return;
+
+            // Checkpoint pickups
+            checkpoints.forEach(checkpoint => {
+                if (!checkpoint.userData.collected) {
+                    const distance = ship.position.distanceTo(checkpoint.position);
+                    // Collision radius based on checkpoint difficulty/size
+                    const checkpointDiff = checkpoint.userData.difficulty || 'medium';
+                    const sizeMultiplier = {
+                        'very-easy': 1.0,   // Normal collision radius
+                        'easy': 0.9,        // 10% smaller
+                        'medium': 0.8,      // 20% smaller
+                        'hard': 0.65,       // 35% smaller
+                        'very-hard': 0.5    // 50% smaller
+                    };
+                    const collisionRadius = 4 * (sizeMultiplier[checkpointDiff] || 0.8);
+                    if (distance < collisionRadius) {
+                        collectCheckpoint(checkpoint);
+                    }
+                }
+            });
+
+            // Asteroid bumps (rate limited)
+            const now = performance.now();
+            asteroids.forEach(asteroid => {
+                const distance = ship.position.distanceTo(asteroid.position);
+                if (distance < 2) {
+                    if (now - lastHitTime > hitCooldown) {
+                        lastHitTime = now;
+                        fuel = Math.max(0, fuel - 5);
+                        score = Math.max(0, score - 50);
+                        updateScore();
+                        document.getElementById('fuel').textContent = Math.round(fuel);
+
+                        // Knockback a bit
+                        shipVelocity.x *= -0.4;
+                        shipVelocity.y *= -0.2;
+                    }
+                }
+            });
+        }
+
+        function startGame() {
+            if (!questionsReady) {
+                // Hide button and show loading
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('loadingMessage').style.display = 'block';
+                
+                // Wait for questions to load
+                const checkReady = setInterval(() => {
+                    if (questionsReady) {
+                        clearInterval(checkReady);
+                        document.getElementById('loadingMessage').style.display = 'none';
+                        actuallyStartGame();
+                    }
+                }, 100);
+            } else {
+                actuallyStartGame();
+            }
+        }
+        
+        function actuallyStartGame() {
+            // Reset state
+            score = 0;
+            fuel = 100;
+            checkpointsCollected = 0;
+            totalCheckpointsTarget = 10;
+            difficulty = 'medium';
+            correctStreak = 0;
+            incorrectStreak = 0;
+            currentQuestionIndex = 0;
+            document.getElementById('diffLevel').textContent = 'MEDIUM';
+            document.getElementById('diffLevel').className = 'diff-medium';
+            document.getElementById('scoreValue').textContent = '0';
+            document.getElementById('fuel').textContent = '100';
+            document.getElementById('checkpoints').textContent = '0';
+            document.getElementById('checkpointTarget').textContent = '10';
+            speed = parseInt(document.getElementById('speedSlider').value) || 3;
+            ship.position.set(0, 5, 10);
+            shipVelocity.set(0, 0, 0);
+            // Objects are already generated when questions loaded
+
+            document.getElementById('startScreen').style.display = 'none';
+            isPaused = false;
+            gameStarted = true;
+
+            if (rafId) cancelAnimationFrame(rafId);
+            animate();
+        }
+
+        function winGame() {
+            isPaused = true;
+            gameStarted = false;
+            GameUtils.sendGameStats(true);
+            showEnd('Mission Complete!', `Final Score: ${score}`);
+        }
+
+        function endGame() {
+            isPaused = true;
+            gameStarted = false;
+            GameUtils.sendGameStats(true);
+            showEnd('Out of Fuel!', `You collected ${checkpointsCollected}/10 checkpoints · Score: ${score}`);
+        }
+
+        function showEnd(title, subtitle) {
+            const end = document.getElementById('endScreen');
+            document.getElementById('endTitle').textContent = title;
+            document.getElementById('endSubtitle').textContent = subtitle;
+            
+            // Show stats
+            const stats = GameUtils.getCurrentStats();
+            document.getElementById('endStats').innerHTML = `
+                <div>Play Time: ${stats.playTime}</div>
+                <div>Questions Answered: ${stats.questions}</div>
+                <div>Correct Answers: ${stats.correct}</div>
+                <div>Accuracy: ${stats.accuracy}</div>
+            `;
+            
+            // Start loading more questions immediately
+            if (!nextQuestionsLoading && nextQuestions.length === 0) {
+                loadMoreQuestions();
+            }
+            
+            end.style.display = 'flex';
+        }
+
+        function hideEnd() {
+            document.getElementById('endScreen').style.display = 'none';
+        }
+        
+        function continueGame() {
+            if (!nextQuestionsLoading && nextQuestions.length === 0) {
+                // No questions ready, start loading
+                loadMoreQuestions();
+            }
+            
+            if (nextQuestionsLoading || (nextQuestions.length === 0 && questions.length - currentQuestionIndex === 0)) {
+                // Show loading message
+                document.getElementById('continueBtn').style.display = 'none';
+                document.getElementById('continueLoading').style.display = 'block';
+                
+                // Wait for questions
+                const checkReady = setInterval(() => {
+                    if (!nextQuestionsLoading && nextQuestions.length > 0) {
+                        clearInterval(checkReady);
+                        document.getElementById('continueLoading').style.display = 'none';
+                        document.getElementById('continueBtn').style.display = 'block';
+                        actuallyContinueGame();
+                    }
+                }, 100);
+            } else {
+                actuallyContinueGame();
+            }
+        }
+        
+        function actuallyContinueGame() {
+            // Use next questions if current ones are exhausted
+            if (questions.length - currentQuestionIndex === 0 && nextQuestions.length > 0) {
+                questions = nextQuestions;
+                nextQuestions = [];
+                currentQuestionIndex = 0;
+            }
+            
+            // Reset some game state but keep score and progress
+            fuel = 100;
+            // Keep checkpoints collected count and increase target
+            totalCheckpointsTarget += 10;
+            document.getElementById('fuel').textContent = '100';
+            document.getElementById('checkpointTarget').textContent = totalCheckpointsTarget.toString();
+            ship.position.set(0, 5, 10);
+            shipVelocity.set(0, 0, 0);
+            // Reset object generation for new round
+            objectsGenerated = false;
+            generateAllObjects();
+            
+            hideEnd();
+            isPaused = false;
+            gameStarted = true;
+            
+            if (rafId) cancelAnimationFrame(rafId);
+            animate();
+        }
+
+        function animate() {
+            rafId = requestAnimationFrame(animate);
+            if (!gameStarted) return;
+
+            updateShip();
+            updateEnvironment();
+            checkCollisions();
+
+            renderer.render(scene, camera);
+        }
+
+        // --- boot ---
+        init();
+    </script>
+</body>
+</html>
