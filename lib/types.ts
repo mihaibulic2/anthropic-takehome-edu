@@ -57,7 +57,6 @@ export type CustomUIDataTypes = {
   };
   gameResults: {
     gameId: string;
-    selectedStyle: string;
     questionsAttempted: number;
     correctAnswers: number;
     wrongAnswers: number;

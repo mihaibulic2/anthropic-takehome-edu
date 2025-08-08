@@ -22,7 +22,7 @@ function PureSuggestedActions({
     {
       title: 'What is 7 times 8?',
       label: 'I need help with multiplication',
-      action: 'What is 7 times 8? I need help with multiplication tables.',
+      action: 'What is 7 times 8? I need help with multiplication tables',
     },
     {
       title: 'How do you add fractions?',
@@ -32,12 +32,12 @@ function PureSuggestedActions({
     {
       title: 'What does the word',
       label: 'magnificent mean?',
-      action: 'What does the word magnificent mean? Can you explain it simply?',
+      action: 'What does the word magnificent mean? Can you explain it simply? (this is a vocab word at school, I\'m in 4th grade)',
     },
     {
-      title: 'Help me practice',
-      label: 'telling time on clocks',
-      action: 'Help me practice telling time on clocks. What time is 3:15?',
+      title: 'Help me remember',
+      label: 'the muscles in the arm',
+      action: 'Help me remember the muscles in the arm? I\'m in 6th grade',
     },
   ];
 

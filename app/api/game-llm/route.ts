@@ -13,7 +13,6 @@ export async function POST(request: Request) {
 
 Game Context:
 - Game ID: ${gameContext.gameId}
-- Style: ${gameContext.selectedStyle}  
 - Topic: ${gameContext.questionSpec}
 
 User Request: ${prompt}

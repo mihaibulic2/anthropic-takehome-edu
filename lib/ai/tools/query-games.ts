@@ -17,7 +17,7 @@ const gameMatchSchema = z.object({
 // This tool will wait for game completion before returning
 // It returns both the query results (matched games) and game results (stats)
 export const queryAndShowGames = tool({
-  description: 'Search for available educational games and automatically show game popup to user',
+  description: 'Search for available educational games and automatically show game popup to user. Use this whenever the user asks for help with an elementary school level problem',
   inputSchema: z.object({
     problemSpec: z.string().describe("Short description of the problem user is trying to solve (include exact question if there is one) (eg 'multiplication tables' or 'wants to simplify: x^2 + 4x + 4 = 6x^2 - 8')"),
     userSpec: z.string().describe("Short description of user (eg age/grade, ability level, gender, game preference, things they like, etc)"),

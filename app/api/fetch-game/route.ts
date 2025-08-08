@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     console.log('fetchGame called with:', gameProps);
     
     // Route to appropriate game template based on gameId
-    const gameId = gameProps.gameId || 'red-screen-game';
+    const gameId = gameProps.gameId;
     const gameFileName = `${gameId}.html`;
     const templatePath = path.join(process.cwd(), 'lib/games', gameFileName);
     
