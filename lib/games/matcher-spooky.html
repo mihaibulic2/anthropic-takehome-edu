@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Haunted Halls — Shadow Match</title>
+<script src="/games/shared/utils.js"></script>
+<style>
+  html, body { margin:0; height:100%; background: radial-gradient(1600px 800px at 50% -10%, #1a1b2a 20%, #0b0c14 70%) fixed; color:#e7e6f2; font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; overflow:hidden; }
+
+  /* Victorian room layers (non-interactive) */
+  #room { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .wallpaper {
+    position:absolute; inset:0;
+    background:
+      radial-gradient(transparent 60%, rgba(0,0,0,.35)) center/1200px 800px no-repeat,
+      radial-gradient(circle at 10px 8px, rgba(255,255,255,0.05) 2px, transparent 2px) 0 0/24px 24px,
+      radial-gradient(circle at 22px 20px, rgba(255,255,255,0.035) 1.6px, transparent 1.6px) 0 0/24px 24px,
+      linear-gradient(#1f2133, #191b2a);
+  }
+  .chair-rail { position:absolute; left:0; right:0; top:38%; height:10px; background: linear-gradient(#131520, #2a2d45 40%, #131520); box-shadow: 0 2px 10px rgba(0,0,0,.5); }
+  .wainscot { position:absolute; left:0; right:0; top:calc(38% + 10px); bottom:18%; background: repeating-linear-gradient(90deg, #141724, #141724 24px, #0f1220 24px, #0f1220 48px); box-shadow: inset 0 10px 30px rgba(0,0,0,.6); }
+  .floor { position:absolute; left:-10%; right:-10%; bottom:-4%; height:30%; transform: perspective(800px) rotateX(60deg); transform-origin: top center; background: repeating-linear-gradient(90deg, #2a241c, #2a241c 16px, #3a3025 16px, #3a3025 34px); box-shadow: inset 0 60px 60px rgba(0,0,0,.55); }
+  .ceiling { position:absolute; left:0; right:0; top:0; height:16%; background: linear-gradient(#0e0f18, #141624); box-shadow: inset 0 -20px 30px rgba(0,0,0,.6); }
+  .chandelier { position:absolute; top:4%; left:50%; transform:translateX(-50%); width:160px; height:120px; opacity:.45; filter: drop-shadow(0 6px 8px rgba(0,0,0,.6));
+    background: radial-gradient(closest-side, #10121d 85%, transparent 86%) center 70%/60px 60px no-repeat;
+  }
+  .chandelier::before, .chandelier::after { content:""; position:absolute; background:#10121d; opacity:.8; }
+  .chandelier::before { width:2px; height:80px; top:-80px; left:50%; }
+  .chandelier::after { left:0; right:0; top:10px; height:2px; box-shadow: inset 0 0 0 2px #10121d; }
+  .window { position:absolute; top:10%; width:200px; height:260px; border: 2px solid rgba(200,220,255,.18); border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; border-top-left-radius: 120px 160px; border-top-right-radius: 120px 160px; background: radial-gradient(140px 120px at 60% 30%, rgba(180,200,255,.22), rgba(120,150,220,.12) 60%, rgba(30,40,70,.08) 80%, transparent 82%), linear-gradient(#0e1222, #0b1020);
+    overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 0 30px rgba(120,150,220,.08);
+  }
+  .window::before { content:""; position:absolute; inset:-20% -10% auto -10%; height:60%; background: radial-gradient(closest-side, rgba(210,230,255,.35), rgba(210,230,255,.18), rgba(210,230,255,0) 70%); filter: blur(6px); transform: rotate(-12deg); }
+  .window.left { left:12%; }
+  .window.right { right:12%; }
+  .portrait { position:absolute; top:22%; width:140px; height:180px; background: linear-gradient(#0f111b, #10131e); border:6px solid #4b3a2d; box-shadow: 0 10px 24px rgba(0,0,0,.55), inset 0 0 20px rgba(0,0,0,.6); }
+  .portrait.left { left:28%; }
+  .portrait.right { right:28%; }
+
+  /* Floor fog and dust */
+  .low-fog { position:fixed; left:0; right:0; bottom:0; height:40%; background: radial-gradient(60% 40% at 50% 100%, rgba(120,140,180,.22), rgba(100,120,160,.14), rgba(50,60,90,0)); filter: blur(10px); opacity:.7; pointer-events:none; z-index:1; }
+  .dust { position:fixed; inset:0; pointer-events:none; z-index:1; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.5px); background-size: 2px 2px; -webkit-mask-image: radial-gradient(60% 50% at 50% 30%, #000, transparent 70%); mask-image: radial-gradient(60% 50% at 50% 30%, #000, transparent 70%); opacity:.2; }
+  
+  /* Start screen */
+  #startScreen {
+    position: fixed; inset: 0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: radial-gradient(1200px 600px at 50% -10%, #1b1e2b 30%, #0a0b10 70%);
+    z-index: 1000;
+  }
+  #startScreen h1 { font-size: 46px; margin: 0 0 12px 0; letter-spacing: 1px; text-shadow: 0 0 20px #6b7bff; }
+  #startScreen p { opacity: .85; margin: 0 0 22px 0; }
+  #startBtn {
+    padding: 14px 26px; font-size: 20px; border:0; border-radius: 10px; cursor:pointer;
+    background:#6b7bff; color:#fff; box-shadow: 0 0 18px rgba(107,123,255,.45);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  #startBtn:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(107,123,255,.75); }
+  #loadingMessage { margin-top:12px; color:#b7c0ff; display:none; }
+
+  /* End screen */
+  #endScreen {
+    position: fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column;
+    background: rgba(5,6,10,.84); z-index:1000;
+  }
+  #endScreen h2 { margin:0 0 6px 0; font-size: 40px; text-shadow: 0 0 20px #74faae; }
+  #endScreen p { margin:0 0 16px 0; opacity:.9; }
+  #endStats { margin:10px 0 16px 0; font-size:16px; }
+  #continueBtn {
+    padding: 12px 22px; font-size: 18px; border:0; border-radius: 10px; cursor:pointer;
+    background:#74faae; color:#0a0b10; font-weight:700; box-shadow: 0 0 18px rgba(116,250,174,.45);
+  }
+  #continueLoading { margin-top:12px; color:#b7c0ff; display:none; }
+
+  /* HUD + controls */
+  #ui { position:fixed; inset:0; pointer-events:none; }
+  .hud {
+    position: fixed; left:50%; top:16px; transform: translateX(-50%);
+    display:flex; flex-direction:row; align-items:center; gap:8px; pointer-events:none;
+  }
+  .hud-item {
+    background: rgba(28,32,48,.6); border:1px solid rgba(116,122,186,.55); padding:8px 10px; border-radius:10px;
+    backdrop-filter: blur(6px); box-shadow: 0 6px 18px rgba(0,0,0,.35); font-weight:600; font-size:14px;
+  }
+  .hud .label { color:#9aa4ff; margin-right:6px; }
+  .controls {
+    position: fixed; left:16px; bottom:16px; pointer-events:none;
+    background: rgba(28,32,48,.6); border:1px solid rgba(116,122,186,.55); padding:10px 12px; border-radius:10px; font-size:13px;
+  }
+  .toast {
+    position: fixed; right:16px; top:16px; display:none; pointer-events:none;
+    background: linear-gradient(135deg,#6b7bff,#74faae); color:#0b0c14; font-weight:700; padding:10px 14px; border-radius:10px;
+    box-shadow: 0 10px 26px rgba(0,0,0,.35);
+  }
+
+  /* Board layout */
+  #gameRoot { position:fixed; inset:0; display:grid; grid-template-columns: 1fr minmax(280px, 520px) 1fr; }
+  #leftCol, #rightCol {
+    position: relative; padding: 160px 24px 24px 24px; display:flex; flex-direction:column; gap:10px; z-index:2;
+  }
+  #leftItems, #rightItems { display:flex; flex-direction:column; gap:14px; }
+  .colTitle { position:absolute; top:24px; left:24px; font-size:18px; color:#b7c0ff; text-shadow: 0 0 12px #2a2f52; display:none; }
+  .item {
+    user-select:none; cursor:pointer; padding:14px 14px; border-radius:10px; border:1px solid rgba(116,122,186,.35);
+    background:
+      radial-gradient(120% 180% at 20% 10%, rgba(255,255,255,.06), transparent 40%),
+      radial-gradient(160% 260% at 80% 140%, rgba(0,0,0,.12), transparent 40%),
+      linear-gradient(#ede3c6, #e1d3b0);
+    color:#2e2416;
+    box-shadow: 0 10px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.25);
+    transition: transform .12s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+    position:relative;
+  }
+  .item::before { content:""; position:absolute; inset:0; border-radius:10px; box-shadow: inset 0 0 18px rgba(0,0,0,.15); pointer-events:none; }
+  .item:hover { transform: translateY(-2px); box-shadow: 0 16px 26px rgba(0,0,0,.45); }
+  .item.selected { outline: 2px solid #ffd56e; }
+  .item.locked { cursor: default; opacity:.8; }
+  .item.correct { border-color:#74faae; box-shadow: 0 0 18px rgba(116,250,174,.45) inset; }
+  .item.wrong   { border-color:#ff6b6b; box-shadow: 0 0 18px rgba(255,107,107,.45) inset; }
+
+  /* Connector layer */
+  #wires { position:absolute; inset:0; pointer-events:none; z-index:1; }
+
+  /* Spooky ambience */
+  .fog { position:fixed; inset: -10%; background: radial-gradient(1200px 320px at 20% 0%, rgba(107,123,255,.08), transparent 60%), radial-gradient(1000px 280px at 80% 10%, rgba(116,250,174,.08), transparent 60%); filter: blur(14px); opacity:.7; pointer-events:none; }
+  .candle-flicker { position:fixed; inset:0; pointer-events:none; background: radial-gradient(200px 120px at 50% 100%, rgba(255,213,110,.05), transparent 70%); animation: flicker 2.4s infinite ease-in-out; }
+  @keyframes flicker { 0%,100%{opacity:.2} 50%{opacity:.4} 70%{opacity:.25} }
+  .ghost { position:fixed; width:52px; height:70px; top: calc(20% + var(--y) * 1%); left:-60px; opacity:.45; pointer-events:none; z-index:1;
+    background:
+      radial-gradient(40px 38px at 50% 32px, rgba(230,240,255,.95), rgba(230,240,255,.75) 60%, rgba(230,240,255,0) 62%),
+      radial-gradient(closest-side, rgba(230,240,255,.9), rgba(200,220,255,.65));
+    border-bottom-left-radius: 26px 16px; border-bottom-right-radius: 26px 16px; border-top-left-radius: 38px; border-top-right-radius: 38px;
+    box-shadow: 0 10px 20px rgba(120,140,200,.25);
+    animation: drift 16s linear infinite;
+  }
+  .ghost::before, .ghost::after { content:""; position:absolute; width:10px; height:10px; background:#1a1d2a; border-radius:50%; top:22px; opacity:.8; }
+  .ghost::before { left:16px; }
+  .ghost::after { right:16px; }
+  .ghost .mouth { position:absolute; left:50%; top:40px; width:12px; height:8px; transform:translateX(-50%); border-bottom-left-radius: 12px 10px; border-bottom-right-radius: 12px 10px; background:#1a1d2a; opacity:.9; }
+  @keyframes drift { 0%{ transform: translateX(0) translateY(0) scale(1);} 50%{ transform: translateX(120vw) translateY(-12px) scale(1.03);} 100%{ transform: translateX(240vw) translateY(0) scale(1);} }
+
+  /* Per-puzzle overlay */
+  #puzzleOverlay { position: fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:900; background: rgba(5,6,10,.7); }
+  #puzzleOverlay .panel { background: rgba(28,32,48,.92); border:1px solid rgba(116,122,186,.55); padding: 18px 22px; border-radius: 12px; text-align:center; box-shadow: 0 12px 28px rgba(0,0,0,.5); }
+  #puzzleOverlay h3 { margin:0 0 6px 0; font-size:24px; text-shadow: 0 0 12px #6b7bff; }
+  #puzzleOverlay .stats { margin:8px 0 12px 0; opacity:.9; }
+  #nextPuzzleBtn { padding:10px 18px; font-size:16px; border:0; border-radius:10px; cursor:pointer; background:#6b7bff; color:#fff; box-shadow: 0 0 18px rgba(107,123,255,.45); }
+</style>
+</head>
+<body>
+<!-- Start Screen -->
+<div id="startScreen">
+  <h1 id="gameTitle">🕯️ Haunted Halls</h1>
+  <p id="gameDescription">Match the clues to lift the mansion’s curse.</p>
+  <button id="startBtn">Enter the Mansion</button>
+  <div id="loadingMessage">Summoning puzzles from the beyond…</div>
+</div>
+
+<!-- End Screen -->
+<div id="endScreen">
+  <h2 id="endTitle">The Curse Weakens!</h2>
+  <p id="endSubtitle">Spirits whisper their thanks.</p>
+  <div id="endStats"></div>
+  <button id="continueBtn">Descend Deeper</button>
+  <div id="continueLoading">Consulting the spirits…</div>
+</div>
+
+<!-- Game Root -->
+<div id="gameRoot" style="display:none;">
+  <div id="room" aria-hidden="true">
+    <div class="wallpaper"></div>
+    <div class="ceiling"></div>
+    <div class="chandelier"></div>
+    <div class="window left"></div>
+    <div class="window right"></div>
+    <div class="portrait left"></div>
+    <div class="portrait right"></div>
+    <div class="wainscot"></div>
+    <div class="chair-rail"></div>
+    <div class="floor"></div>
+  </div>
+  <svg id="wires"></svg>
+  <div id="leftCol">
+    <div class="colTitle">Left</div>
+    <div id="leftItems"></div>
+  </div>
+  <div style="position:relative"></div>
+  <div id="rightCol">
+    <div class="colTitle">Right</div>
+    <div id="rightItems"></div>
+  </div>
+</div>
+
+<div class="fog"></div>
+<div class="candle-flicker"></div>
+<div class="low-fog"></div>
+<div class="dust"></div>
+<div class="ghost" style="--y:6; animation-delay:0s;"><div class="mouth"></div></div>
+<div class="ghost" style="--y:22; animation-delay:4s;"><div class="mouth"></div></div>
+<div class="ghost" style="--y:38; animation-delay:8s;"><div class="mouth"></div></div>
+
+  <!-- Puzzle Complete Overlay -->
+  <div id="puzzleOverlay">
+    <div class="panel">
+      <h3>Puzzle Complete</h3>
+      <div class="stats" id="puzzleStats"></div>
+      <button id="nextPuzzleBtn">Next</button>
+    </div>
+  </div>
+
+<div id="ui">
+  <div class="hud" id="hud">
+    <div class="hud-item"><span class="label">⏳ Time:</span> <span id="timeValue">3:00</span></div>
+    <div class="hud-item"><span class="label">🧩 Puzzles:</span> <span id="puzzlesValue">0</span></div>
+    <div class="hud-item"><span class="label">🎯 Accuracy:</span> <span id="accValue">0%</span></div>
+    <div class="hud-item"><span class="label">🕸️ Attempts:</span> <span id="attValue">0</span></div>
+  </div>
+  <div class="controls">Click a left item, then a right item to connect. Click again to unselect. R to reshuffle layout.</div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(() => {
+  // Props injected by host
+  const props = {{GAME_PROPS}};
+
+  // Session config (mirrors reference “finish after some time”)
+  const SESSION_SECONDS = typeof props.sessionSeconds === 'number' ? props.sessionSeconds : 180; // default 3 min
+  const QUESTIONS_PER_BATCH = typeof props.questionsPerBatch === 'number' ? props.questionsPerBatch : 6; // puzzles
+  const PAIRS_MIN = 2, PAIRS_MAX = 10;
+
+  // DOM
+  const startScreen = document.getElementById('startScreen');
+  const endScreen = document.getElementById('endScreen');
+  const gameRoot = document.getElementById('gameRoot');
+
+  const leftWrap = document.getElementById('leftItems');
+  const rightWrap = document.getElementById('rightItems');
+  const svg = document.getElementById('wires');
+
+  const timeEl = document.getElementById('timeValue');
+  const puzzlesEl = document.getElementById('puzzlesValue');
+  const accEl = document.getElementById('accValue');
+  const attEl = document.getElementById('attValue');
+  const toast = document.getElementById('toast');
+  const puzzleOverlay = document.getElementById('puzzleOverlay');
+  const puzzleStatsEl = document.getElementById('puzzleStats');
+  const nextPuzzleBtn = document.getElementById('nextPuzzleBtn');
+
+  // State
+  let questions = [];
+  let nextQuestions = [];
+  let qIndex = 0;
+  let running = false;
+  let timerId = null;
+  let remaining = SESSION_SECONDS;
+  let board = null; // current puzzle data
+  let leftSel = null;
+  let rightSel = null;
+  let lock = false; // during 0.5s suspense
+  let lines = []; // {lKey, rKey, svgEl, correct:boolean|null}
+  let completedPairs = 0;
+
+  // Stats via GameUtils
+  GameUtils.initializeStats(props.gameId);
+  GameUtils.setupCloseDetection();
+
+  // Utility UI
+  function showToast(msg, ms=1400){
+    toast.textContent = msg; toast.style.display='block';
+    clearTimeout(showToast._t); showToast._t = setTimeout(()=>toast.style.display='none', ms);
+  }
+
+  function fmtTime(s){
+    const m = Math.floor(s/60); const r = s%60;
+    return `${m}:${String(r).padStart(2,'0')}`;
+  }
+
+  function updateHUD(){
+    const stats = GameUtils.getCurrentStats();
+    timeEl.textContent = fmtTime(remaining);
+    puzzlesEl.textContent = `${qIndex}/${questions.length}`;
+    accEl.textContent = stats.accuracy;
+    attEl.textContent = stats.questions;
+  }
+
+  /* -------------------- Question Loading -------------------- */
+  async function loadInitialQuestions(){
+    const formatSpec = `Return questions in this exact JSON format (array of one or more question objects):
+[{
+  "question": "Match each creature to its description.",
+  "pairsCount": <INTEGER between ${PAIRS_MIN} and ${PAIRS_MAX}>,
+  "left": { "cow": "Steve the Cow", "pig": "Porky the Pig" },
+  "right": { "funny": "He is hilarious", "sad": "He's a sad boy" },
+  "answer": { "cow": "funny", "pig": "sad" },
+  "difficulty": "easy"
+}]
+
+Format Rules:
+- Each object MUST contain EXACTLY "pairsCount" pairs (between ${PAIRS_MIN} and ${PAIRS_MAX}), and follow this schema
+- 'left' and 'right' MUST each contain exactly 'pairsCount' entries.
+- 'answer' MUST map every left key to exactly one right key (one-to-one).
+- Keys are identifiers (no spaces), labels are the visible text.
+- Difficulty must be one of: very-easy, easy, medium, hard, very-hard.
+- Do NOT include any commentary; return ONLY the JSON array.`;
+
+    const arr = await GameUtils.generateQuestions(props, QUESTIONS_PER_BATCH, formatSpec, true);
+    questions = Array.isArray(arr) ? arr : [];
+    if (questions.length === 0) {
+      alert('Failed to load puzzles. Please refresh.');
+      return false;
+    }
+    return true;
+  }
+
+  async function loadMoreQuestions(){
+    const formatSpec = `
+Return puzzles in the same JSON shape as before. Use recent question history to adjust difficulty. Each puzzle MUST have 2–10 pairs and consistent one-to-one mappings. Return ONLY the JSON array.`;
+    const arr = await GameUtils.generateQuestions(props, QUESTIONS_PER_BATCH, formatSpec, false);
+    nextQuestions = Array.isArray(arr) ? arr : [];
+  }
+
+  function maybePrefetch(){
+    if ((questions.length - qIndex) <= 2 && nextQuestions.length === 0){
+      loadMoreQuestions();
+    }
+  }
+
+  /* -------------------- Board Rendering -------------------- */
+  function clearBoard(){
+    leftWrap.innerHTML = '';
+    rightWrap.innerHTML = '';
+    svg.innerHTML = '';
+    lines = [];
+    leftSel = rightSel = null;
+    completedPairs = 0;
+  }
+
+  function renderBoard(q){
+    clearBoard();
+    board = normalizePuzzle(q);
+    // Titles
+    // Hidden labels retained for layout; no text updates needed
+
+    // Build items
+    for (const [k,label] of Object.entries(board.left)) {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.dataset.key = k;
+      el.dataset.side = 'left';
+      el.textContent = label;
+      el.addEventListener('click', () => onSelect(el));
+      leftWrap.appendChild(el);
+    }
+    for (const [k,label] of Object.entries(board.right)) {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.dataset.key = k;
+      el.dataset.side = 'right';
+      el.textContent = label;
+      el.addEventListener('click', () => onSelect(el));
+      rightWrap.appendChild(el);
+    }
+
+    // Resize & initial wire layer
+    resize();
+    randomizeLayout(); // light shuffle for variety
+  }
+
+  function normalizePuzzle(q){
+    // Trust LLM shape per spec
+    const L = q.left || {};
+    const R = q.right || {};
+    const A = q.answer || {};
+    const count = q.pairsCount || Math.min(10, Math.max(2, Math.min(Object.keys(L).length, Object.keys(R).length)));
+    return {
+      question: q.question || 'Make the matches.',
+      pairsCount: count,
+      left: L,
+      right: R,
+      answer: A
+    };
+  }
+
+  function randomizeLayout(){
+    // Shuffle order visually (not changing keys)
+    const lChildren = Array.from(leftWrap.children);
+    const rChildren = Array.from(rightWrap.children);
+    shuffle(lChildren).forEach(c => leftWrap.appendChild(c));
+    shuffle(rChildren).forEach(c => rightWrap.appendChild(c));
+    drawAllLines(); // keep existing locked lines positioned
+  }
+
+  function shuffle(arr){
+    for (let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function resize(){
+    const rect = gameRoot.getBoundingClientRect();
+    svg.setAttribute('width', rect.width);
+    svg.setAttribute('height', rect.height);
+    svg.style.left = rect.left + 'px';
+    svg.style.top = rect.top + 'px';
+    drawAllLines();
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R'){ randomizeLayout(); showToast('Shuffled!'); }
+  });
+
+  /* -------------------- Selection & Connections -------------------- */
+  function onSelect(el){
+    if (!running || lock) return;
+    if (el.classList.contains('locked')) return;
+
+    const side = el.dataset.side;
+
+    // Toggle behavior
+    if (el.classList.contains('selected')){
+      el.classList.remove('selected');
+      if (side === 'left') leftSel = null;
+      else rightSel = null;
+      return; // no penalty
+    }
+
+    // Select this; enforce one per side
+    if (side === 'left'){
+      if (leftSel) leftSel.classList.remove('selected');
+      leftSel = el; el.classList.add('selected');
+    } else {
+      if (rightSel) rightSel.classList.remove('selected');
+      rightSel = el; el.classList.add('selected');
+    }
+
+    // If both chosen, draw temp line and evaluate after 0.5s
+    if (leftSel && rightSel){
+      const lKey = leftSel.dataset.key;
+      const rKey = rightSel.dataset.key;
+      const line = drawLineBetween(leftSel, rightSel, null); // color later
+      lines.push({ lKey, rKey, svgEl: line, correct: null });
+
+      // suspense
+      lock = true;
+      setTimeout(() => evaluateConnection(leftSel, rightSel, line), 500);
+    }
+  }
+
+  function evaluateConnection(leftEl, rightEl, lineEl){
+    const lKey = leftEl.dataset.key;
+    const rKey = rightEl.dataset.key;
+    const isCorrect = (board.answer[lKey] === rKey);
+
+    // Record attempt
+    GameUtils.trackAnswer(isCorrect);
+
+    if (isCorrect){
+      leftEl.classList.remove('selected'); rightEl.classList.remove('selected');
+      leftEl.classList.add('locked','correct'); rightEl.classList.add('locked','correct');
+      styleLine(lineEl, true);
+      completedPairs++;
+
+      // Lock the pair (keep the green wire)
+      leftEl.removeEventListener('click', onSelect);
+      rightEl.removeEventListener('click', onSelect);
+      showToast('Nice match!');
+
+      if (completedPairs === board.pairsCount){
+        // Puzzle complete
+        qIndex++;
+        GameUtils.sendGameStats(false);
+        updateHUD();
+        showPuzzleCompleteOverlay();
+      }
+    } else {
+      // Flash wrong, then clear line and selections
+      leftEl.classList.add('wrong'); rightEl.classList.add('wrong');
+      styleLine(lineEl, false);
+      showToast('Not quite…');
+
+      setTimeout(() => {
+        leftEl.classList.remove('wrong','selected');
+        rightEl.classList.remove('wrong','selected');
+        // remove last line
+        if (lineEl && lineEl.parentNode) lineEl.parentNode.removeChild(lineEl);
+        // remove from lines list
+        lines = lines.filter(x => x.svgEl !== lineEl);
+      }, 450);
+    }
+
+    // Reset selection gate
+    leftSel = null; rightSel = null; lock = false;
+    updateHUD();
+  }
+
+  /* -------------------- SVG Lines -------------------- */
+  function drawLineBetween(leftEl, rightEl, color){
+    const l = centerOf(leftEl);
+    const r = centerOf(rightEl);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const d = cubicPath(l, r);
+    path.setAttribute('d', d);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color || 'rgba(255, 213, 110, .9)');
+    path.setAttribute('stroke-width','3');
+    path.setAttribute('stroke-linecap','round');
+    path.style.filter = 'drop-shadow(0 0 6px rgba(255,213,110,.55))';
+    svg.appendChild(path);
+    return path;
+  }
+
+  function styleLine(path, isCorrect){
+    if (!path) return;
+    if (isCorrect){
+      path.setAttribute('stroke', '#74faae');
+      path.style.filter = 'drop-shadow(0 0 8px rgba(116,250,174,.7))';
+    } else {
+      path.setAttribute('stroke', '#ff6b6b');
+      path.style.filter = 'drop-shadow(0 0 8px rgba(255,107,107,.7))';
+    }
+  }
+
+  function drawAllLines(){
+    // Recompute positions for existing paths (for responsiveness / shuffle)
+    lines.forEach(conn => {
+      const lEl = findEl('left', conn.lKey);
+      const rEl = findEl('right', conn.rKey);
+      if (!lEl || !rEl || !conn.svgEl) return;
+      const d = cubicPath(centerOf(lEl), centerOf(rEl));
+      conn.svgEl.setAttribute('d', d);
+    });
+  }
+
+  function centerOf(el){
+    const rootRect = gameRoot.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return { x: r.left - rootRect.left + r.width/2, y: r.top - rootRect.top + r.height/2 };
+    }
+
+  function cubicPath(a,b){
+    const dx = Math.max(60, Math.abs(b.x - a.x) * 0.5);
+    const c1 = `${a.x + dx},${a.y}`;
+    const c2 = `${b.x - dx},${b.y}`;
+    return `M ${a.x},${a.y} C ${c1} ${c2} ${b.x},${b.y}`;
+  }
+
+  function findEl(side, key){
+    const wrap = side === 'left' ? leftWrap : rightWrap;
+    return wrap.querySelector(`.item[data-key="${key}"]`);
+  }
+
+  /* -------------------- Flow -------------------- */
+  async function startGame(){
+    // Begin loading
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('loadingMessage').style.display = 'block';
+
+    const ok = await loadInitialQuestions();
+    if (!ok) return;
+
+    // Hide start, show game
+    startScreen.style.display = 'none';
+    gameRoot.style.display = 'grid';
+
+    // Timer
+    running = true;
+    remaining = SESSION_SECONDS;
+    timerId = setInterval(() => {
+      if (!running) return;
+      remaining--;
+      if (remaining <= 0){
+        endGame('Time’s up!', 'The spirits demand another round.');
+      }
+      updateHUD();
+    }, 1000);
+
+    // First puzzle
+    qIndex = 0;
+    nextPuzzle(true);
+  }
+
+  function nextPuzzle(isFirst=false){
+    if (qIndex >= questions.length){
+      // Out of puzzles -> end screen prompts to fetch more (like reference)
+      endGame('All puzzles solved!', 'The hall grows quiet…');
+      return;
+    }
+    const q = questions[qIndex];
+    renderBoard(q);
+    maybePrefetch();
+    updateHUD();
+    if (isFirst) showToast('Begin matching!');
+  }
+
+  function endGame(title, subtitle){
+    running = false;
+    if (timerId) { clearInterval(timerId); timerId = null; }
+
+    GameUtils.sendGameStats(true);
+
+    // Stats for end screen
+    const stats = GameUtils.getCurrentStats();
+    document.getElementById('endTitle').textContent = title || 'Well played!';
+    document.getElementById('endSubtitle').textContent = subtitle || '';
+    document.getElementById('endStats').innerHTML = `
+      <div>⏳ Play Time: ${stats.playTime}</div>
+      <div>🕸️ Attempts: ${stats.questions}</div>
+      <div>✅ Correct: ${stats.correct}</div>
+      <div>🎯 Accuracy: ${stats.accuracy}</div>
+    `;
+
+    // Preload more for “Descend Deeper”
+    if (nextQuestions.length === 0) loadMoreQuestions();
+
+    endScreen.style.display = 'flex';
+  }
+
+  function continueGame(){
+    // If we have prefetched, swap in
+    if (questions.length - qIndex <= 0 && nextQuestions.length > 0){
+      questions = nextQuestions; nextQuestions = []; qIndex = 0;
+    }
+
+    // If nothing yet, wait
+    if (questions.length - qIndex <= 0){
+      document.getElementById('continueBtn').style.display = 'none';
+      document.getElementById('continueLoading').style.display = 'block';
+      const wait = setInterval(() => {
+        if (nextQuestions.length > 0){
+          clearInterval(wait);
+          document.getElementById('continueLoading').style.display = 'none';
+          document.getElementById('continueBtn').style.display = 'block';
+          questions = nextQuestions; nextQuestions = []; qIndex = 0;
+          actuallyContinue();
+        }
+      }, 120);
+    } else {
+      actuallyContinue();
+    }
+  }
+
+  function actuallyContinue(){
+    endScreen.style.display = 'none';
+    running = true;
+    remaining = SESSION_SECONDS;
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (!running) return;
+      remaining--;
+      if (remaining <= 0){
+        endGame('Time’s up!', 'The spirits demand another round.');
+      }
+      updateHUD();
+    }, 1000);
+    nextPuzzle(true);
+  }
+
+  /* -------------------- Per-puzzle Overlay -------------------- */
+  function showPuzzleCompleteOverlay(){
+    const stats = GameUtils.getCurrentStats();
+    if (puzzleStatsEl){
+      puzzleStatsEl.innerHTML = `
+        <div>🧩 Puzzles: ${qIndex}/${questions.length}</div>
+        <div>🎯 Accuracy: ${stats.accuracy}</div>
+        <div>🕸️ Attempts: ${stats.questions}</div>
+        <div>✅ Correct: ${stats.correct}</div>
+      `;
+    }
+    running = false; // pause timer while overlay is visible
+    puzzleOverlay.style.display = 'flex';
+  }
+
+  function hidePuzzleCompleteOverlay(){
+    puzzleOverlay.style.display = 'none';
+    running = true; // resume timer
+    nextPuzzle();
+  }
+
+  /* -------------------- Init -------------------- */
+  function init(){
+    // Titles from props
+    const title = props.name || 'Haunted Halls';
+    document.getElementById('gameTitle').textContent = `🕯️ ${title}`;
+    if (props.gameDescription) document.getElementById('gameDescription').textContent = props.gameDescription;
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('continueBtn').addEventListener('click', continueGame);
+    nextPuzzleBtn.addEventListener('click', hidePuzzleCompleteOverlay);
+  }
+  init();
+})();
+</script>
+</body>
+</html>

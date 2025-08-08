@@ -2,15 +2,19 @@
   "games": [
     {
       "id": "3d-space",
-      "description": "Third-person space flight game where the player pilots a spaceship, avoids asteroids, and hits gates to trigger 4-option multiple-choice questions. Suitable for ages 8+, requires 3D navigation skills."
+      "description": "Third-person space flight game where the player pilots a spaceship, avoids asteroids, and hits gates to trigger 4-option multiple-choice questions. Game mechanics suitable for ages 8+, requires 3D navigation skills."
     },
     {
       "id": "line-rider-dino",
-      "description": "Side-scrolling platformer where the player moves a dinosaur, jumps across gaps, and hits gates to trigger 4-option multiple-choice questions. Suitable for ages 6+, requires basic timing and movement skills."
+      "description": "Side-scrolling platformer where the player moves a dinosaur, jumps across gaps, and hits gates to trigger 4-option multiple-choice questions. Game mechanics suitable for ages 6+, requires basic timing and movement skills."
     },
     {
       "id": "line-rider-fairy",
-      "description": "Side-scrolling platformer like line-rider-dino but with a colorful fairy character in a fantasy world. Suitable for ages 6+, requires basic timing and movement skills. Works only with multiple-choice question format."
+      "description": "Side-scrolling platformer like line-rider-dino but with a colorful fairy character in a fantasy world. Game mechanics suitable for ages 6+, requires basic timing and movement skills. Works only with multiple-choice question format."
+    },
+    {
+      "id": "matcher-spooky",
+      "description": "Spooky, ghost-themed matching game where player pairs items from the left column with related items on the right. Each round presents a new set of themed pairs. Game mechanics suitable for ages 7+, requires reading comprehension and logical association skills."
     }
   ]
  }

@@ -1,0 +1,1362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Enchanted Fairy Garden — Knowledge Adventure</title>
+<script src="/games/shared/utils.js"></script>
+<style>
+  html, body { margin:0; height:100%; background:#4a1e5c; font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+  
+  /* Start screen styles */
+  #startScreen {
+    position: fixed; inset: 0; background: linear-gradient(135deg, #4a1e5c, #f8b3ff);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 1000; color: #fff0fc;
+  }
+  #startScreen h1 { font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 30px #ff69b4, 0 0 60px #ff1493; }
+  #startScreen p { font-size: 20px; margin: 10px 0 30px 0; opacity: 0.95; text-shadow: 0 0 10px #ffb3d9; }
+  #startBtn {
+    padding: 16px 32px; font-size: 24px; background: linear-gradient(135deg, #ff69b4, #ff1493);
+    color: #fff; border: none; border-radius: 30px; cursor: pointer;
+    font-weight: bold; transition: all 0.3s; box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
+  }
+  #startBtn:hover { transform: scale(1.1); box-shadow: 0 0 40px rgba(255, 20, 147, 0.9); }
+  #loadingMessage { color: #ffb3ff; font-size: 20px; margin-top: 20px; text-shadow: 0 0 15px #ff69b4; }
+  
+  /* End screen styles */
+  #endScreen {
+    position: fixed; inset: 0; background: rgba(74, 30, 92, 0.95);
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 1000; color: #fff0fc;
+  }
+  #endScreen h2 { font-size: 42px; margin-bottom: 20px; text-shadow: 0 0 30px #ff69b4, 0 0 60px #ff1493; }
+  #endScreen p { font-size: 20px; margin: 10px 0; opacity: 0.95; text-shadow: 0 0 10px #ffb3d9; }
+  #endStats { margin: 20px 0; font-size: 18px; }
+  #endStats div { margin: 8px 0; }
+  #continueBtn {
+    padding: 16px 32px; font-size: 20px; background: linear-gradient(135deg, #ff69b4, #ff1493);
+    color: #fff; border: none; border-radius: 24px; cursor: pointer;
+    font-weight: bold; transition: all 0.3s; margin-top: 20px;
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
+  }
+  #continueBtn:hover { transform: scale(1.1); box-shadow: 0 0 40px rgba(255, 20, 147, 0.9); }
+  #continueLoading { color: #ffb3ff; font-size: 18px; margin-top: 20px; text-shadow: 0 0 15px #ff69b4; }
+  
+  /* Difficulty color styles for HUD */
+  .diff-very-easy { color: #ffccf9; text-shadow: 0 0 15px rgba(255, 204, 249, 0.8); }
+  .diff-easy { color: #e6ccff; text-shadow: 0 0 15px rgba(230, 204, 255, 0.8); }
+  .diff-medium { color: #ff1493; text-shadow: 0 0 15px rgba(255, 20, 147, 0.8); }
+  .diff-hard { color: #7b68ee; text-shadow: 0 0 15px rgba(123, 104, 238, 0.8); }
+  .diff-very-hard { color: #ff00ff; text-shadow: 0 0 15px rgba(255, 0, 255, 0.8); }
+  
+  #ui { position:fixed; inset:0; pointer-events:none; }
+  .hud {
+    position: fixed; left:20px; top:20px; color:#fff0fc; font-size:18px; font-weight:bold;
+    pointer-events:none;
+  }
+  .hud-item {
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, rgba(255, 179, 217, 0.3), rgba(216, 179, 255, 0.3));
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 105, 180, 0.6);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+  }
+  .hud-label {
+    color: #ffb3ff;
+    text-shadow: 0 0 10px rgba(255, 179, 255, 0.8);
+  }
+  .controls {
+    position: fixed; bottom:20px; left:20px; color:#fff0fc;
+    background: linear-gradient(135deg, rgba(255, 179, 217, 0.4), rgba(216, 179, 255, 0.4));
+    padding:10px; border-radius:12px;
+    border:2px solid rgba(255, 105, 180, 0.6); font-size:14px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+  }
+  .toast {
+    position: fixed; right:20px; top:20px; padding:10px 16px; font-size:16px;
+    color:#fff0fc; background:linear-gradient(135deg, rgba(255, 105, 180, 0.95), rgba(147, 50, 204, 0.95));
+    border:2px solid #ff69b4;
+    border-radius:10px; pointer-events:none; display:none;
+    text-shadow: 0 0 10px rgba(255, 179, 255, 0.5);
+    box-shadow: 0 4px 20px rgba(255, 105, 180, 0.6);
+  }
+
+  /* Question modal (colors set inline per-tier) */
+  .prompt { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(74, 30, 92, 0.6); pointer-events:auto; }
+  .card {
+    width:min(720px,94vw); background:#fff5f9; color:#333; border:3px solid #ff69b4; border-radius:16px;
+    box-shadow:0 10px 50px rgba(0, 0, 0, 0.3); padding:16px 16px 12px 16px;
+  }
+  .cardHeader { font-weight:700; font-size:16px; padding:6px 10px; border-radius:8px; margin-bottom:10px; }
+  .q { font-size:26px; margin:6px 0 12px 0; text-align:center; color: #333; font-weight: 600; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn {
+    font-size:18px; padding:12px; border-radius:10px; border:2px solid #ff69b4; background:#8e44ad; color:#fff;
+    cursor:pointer; text-align:center; user-select:none;
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.3);
+  }
+  .btn:hover { filter:brightness(1.2); box-shadow: 0 0 20px rgba(255, 105, 180, 0.6); }
+  .footer { font-size:12px; opacity:.9; margin-top:8px; text-align:center; }
+
+  /* Sparkle animation */
+  @keyframes sparkle {
+    0%, 100% { opacity: 0; transform: translateY(0) scale(0); }
+    50% { opacity: 1; transform: translateY(-20px) scale(1); }
+  }
+  
+  .sparkle {
+    position: fixed;
+    pointer-events: none;
+    animation: sparkle 2s ease-in-out;
+  }
+
+  /* Array helper for VERY EASY graphic */
+  .vizWrap { display:flex; justify-content:center; margin:8px 0 4px 0; }
+  canvas.viz { background:linear-gradient(135deg, #4a1e5c, #8b3a8f); border:2px solid #ff69b4; border-radius:12px; }
+</style>
+</head>
+<body>
+<!-- Start Screen -->
+<div id="startScreen">
+  <h1 id="gameTitle">🧚‍♀️ Enchanted Fairy Garden</h1>
+  <p id="gameDescription">Flutter through magical clouds and answer questions at flower gates!</p>
+  <button id="startBtn">Begin Magic Journey</button>
+  <div id="loadingMessage" style="display: none;">Gathering magical questions...</div>
+</div>
+
+<!-- End Screen -->
+<div id="endScreen">
+  <h2 id="endTitle">Magic Complete!</h2>
+  <p id="endSubtitle">Wonderful journey!</p>
+  <div id="endStats"></div>
+  <button id="continueBtn">Keep Flying</button>
+  <div id="continueLoading" style="display: none;">Summoning more magic...</div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div class="hud" id="hud">
+    <div class="hud-item"><span class="hud-label">✨ Sparkles:</span> <span id="scoreValue">0</span></div>
+    <div class="hud-item"><span class="hud-label">💖 Hearts:</span> <span id="livesValue">3</span></div>
+    <div class="hud-item"><span class="hud-label">🌸 Flowers:</span> <span id="gatesValue">0</span></div>
+    <div class="hud-item"><span class="hud-label">⭐ Magic Level:</span> <span id="diffValue">MEDIUM</span></div>
+  </div>
+  <div class="controls">
+    <div>🎮 Controls:</div>
+    <div>A/D or ← → - Fly</div>
+    <div>W or ↑ or Space - Flutter Up</div>
+    <div>1-4 - Answer Questions</div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <div class="prompt" id="prompt">
+    <div class="card" id="card">
+      <div class="cardHeader" id="cardHeader">Magic Flower Challenge</div>
+      <div class="q" id="questionText">8 × 7 = ?</div>
+
+      <!-- VERY EASY visualizer (rows x columns star grid). Hidden unless tier=VERY_EASY -->
+      <div class="vizWrap" id="vizWrap" style="display:none;">
+        <canvas class="viz" id="viz" width="560" height="220"></canvas>
+      </div>
+
+      <div class="choices">
+        <div class="btn" data-choice="0" id="c0">42</div>
+        <div class="btn" data-choice="1" id="c1">48</div>
+        <div class="btn" data-choice="2" id="c2">56</div>
+        <div class="btn" data-choice="3" id="c3">64</div>
+      </div>
+      <div class="footer" id="cardFooter">Answer with mouse or keys 1–4. Magic adapts to your play.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   Enchanted Fairy Garden — Adaptive Endless Platformer (Canvas 2D)
+   - Single-file, client-only, in-memory state.
+   - Continuous difficulty D∈[0,100] drives BOTH platform & math.
+   - 5 tiers: VERY_EASY, EASY, MEDIUM, HARD, VERY_HARD
+   - Soft bucket probabilities (triangular kernels + home bias).
+   - Endless: pick prefab sections by tier, mutate safely, chain.
+   - Math: questions from LLM API with tier rules; VERY_EASY shows grid.
+   ========================================================== */
+
+(() => {
+  // Game props injected by server
+  const props = {{GAME_PROPS}};
+  
+  // Question management
+  let questions = [];
+  let currentQuestionIndex = 0;
+  let questionsLoading = false;
+  let nextQuestionsLoading = false;
+  let nextQuestions = [];
+  let gameStarted = false;
+  let questionsReady = false;
+  
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // UI elements
+  const scoreEl = document.getElementById('scoreValue');
+  const livesEl = document.getElementById('livesValue');
+  const gatesEl = document.getElementById('gatesValue');
+  const diffEl = document.getElementById('diffValue');
+  const toast = document.getElementById('toast');
+
+  const promptEl = document.getElementById('prompt');
+  const card = document.getElementById('card');
+  const cardHeader = document.getElementById('cardHeader');
+  const qText = document.getElementById('questionText');
+  const cardFooter = document.getElementById('cardFooter');
+  const choiceEls = [0,1,2,3].map(i => document.getElementById('c'+i));
+  const vizWrap = document.getElementById('vizWrap');
+  const viz = document.getElementById('viz');
+  const vctx = viz.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize); resize();
+
+  /* ---------- Sparkle Particle System ---------- */
+  const sparkles = [];
+  const MAX_SPARKLES = 30;
+  
+  function createSparkle(x, y) {
+    sparkles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 100,
+      vy: -Math.random() * 150 - 50,
+      life: 1.0,
+      size: Math.random() * 4 + 2,
+      color: Math.random() > 0.5 ? '#ff69b4' : '#ffb3ff'
+    });
+    if (sparkles.length > MAX_SPARKLES) sparkles.shift();
+  }
+
+  function updateSparkles(dt) {
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy += 200 * dt; // gravity
+      s.life -= dt * 0.5;
+      if (s.life <= 0) sparkles.splice(i, 1);
+    }
+  }
+
+  function drawSparkles() {
+    sparkles.forEach(s => {
+      ctx.save();
+      ctx.globalAlpha = s.life;
+      ctx.fillStyle = s.color;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = s.color;
+      
+      // Draw star shape
+      const x = s.x - camX;
+      const y = s.y - camY;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
+        const r = i % 2 === 0 ? s.size : s.size * 0.5;
+        ctx.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  /* ---------- Physics & Player ---------- */
+  const G = 1700;           // gravity
+  const MOVE_ACCEL = 2200;
+  const MAX_VX = 280;
+  const JUMP_VY = -620;
+  const FRICTION = 0.85;
+  const DT_LIMIT = 1/30;
+
+  const keys = {left:false, right:false, up:false};
+  const player = { x: 120, y: 100, w: 36, h: 42, vx: 0, vy: 0, onGround: false, spawnX: 120, spawnY: 100, wingPhase: 0 };
+
+  /* ---------- Difficulty ---------- */
+  const TIERS = ["VERY_EASY","EASY","MEDIUM","HARD","VERY_HARD"];
+  const tierRanges = { VERY_EASY:[0,20], EASY:[20,40], MEDIUM:[40,60], HARD:[60,80], VERY_HARD:[80,100] };
+  const tierCenters = { VERY_EASY:10, EASY:30, MEDIUM:50, HARD:70, VERY_HARD:90 };
+
+  const tierStyle = {
+    VERY_EASY: { gate:"#ffccf9", popup:"#ffccf9", frame:"#f9a8d4", shape:"petals" },
+    EASY:      { gate:"#e6ccff", popup:"#e6ccff", frame:"#d8b3ff", shape:"hearts" },
+    MEDIUM:    { gate:"#ff1493", popup:"#ff1493", frame:"#ff69b4", shape:"stars" },
+    HARD:      { gate:"#7b68ee", popup:"#7b68ee", frame:"#9370db", shape:"crystals" },
+    VERY_HARD: { gate:"#ff00ff", popup:"#ff00ff", frame:"#da70d6", shape:"rainbow" }
+  };
+
+  let D = 50;            // continuous difficulty [0,100] - start at medium
+  let S_ema = 0.5;       // EMA of recent per-section scores
+  let lastBucketUpIndex = -999; // to throttle bucket climbing
+  let sectionCounter = 0;
+
+  /* ---------- World / Endless Sections ---------- */
+  let world = {
+    sections: [],         // spawned sections
+    nextX: 0,             // where to attach next section (world x)
+    hazards: [],          // convenience mirrors
+    platforms: [],
+    gates: [],
+  };
+
+  // Section object: { id, tier, x0, width, platforms[], hazards[], gate{...}, parTime }
+  // Prefabs are relative (0..width). We'll provide a few per tier for demo.
+
+  const prefabs = {
+    VERY_EASY: [
+      // wide ledges, tiny gaps, low heights
+      { id:"ve1", width: 900, par: 12, platforms:[{x:0,y:520,w:400,h:60},{x:450,y:520,w:450,h:60}],
+        ledges:[{x:220,y:450,w:120,h:20}], hazards:[], gateAt: 420 },
+      { id:"ve2", width: 920, par: 12, platforms:[{x:0,y:520,w:350,h:60},{x:380,y:520,w:540,h:60}],
+        ledges:[{x:160,y:470,w:100,h:20},{x:580,y:470,w:120,h:20}], hazards:[], gateAt: 360 },
+      { id:"ve3", width: 880, par: 11, platforms:[{x:0,y:520,w:300,h:60},{x:320,y:520,w:560,h:60}],
+        ledges:[{x:520,y:430,w:120,h:20}], hazards:[{x:290,y:540,w:20,h:40}], gateAt: 300 },
+      { id:"ve4", width: 940, par: 12, platforms:[{x:0,y:520,w:420,h:60},{x:460,y:520,w:480,h:60}],
+        ledges:[], hazards:[], gateAt: 440 },
+    ],
+    EASY: [
+      { id:"e1", width: 1000, par: 13, platforms:[{x:0,y:520,w:420,h:60},{x:520,y:520,w:480,h:60}],
+        ledges:[{x:260,y:440,w:120,h:20},{x:680,y:400,w:120,h:20}], hazards:[{x:460,y:540,w:40,h:40}], gateAt: 500 },
+      { id:"e2", width: 1050, par: 13, platforms:[{x:0,y:520,w:380,h:60},{x:460,y:520,w:560,h:60}],
+        ledges:[{x:160,y:460,w:110,h:20},{x:640,y:430,w:130,h:20}], hazards:[], gateAt: 460 },
+      { id:"e3", width: 980, par: 13, platforms:[{x:0,y:520,w:340,h:60},{x:420,y:520,w:560,h:60}],
+        ledges:[{x:300,y:460,w:110,h:20}], hazards:[{x:360,y:540,w:60,h:40}], gateAt: 420 },
+      { id:"e4", width: 1040, par: 13, platforms:[{x:0,y:520,w:420,h:60},{x:520,y:520,w:520,h:60}],
+        ledges:[{x:600,y:460,w:120,h:20}], hazards:[], gateAt: 520 },
+    ],
+    MEDIUM: [
+      { id:"m1", width: 1100, par: 14, platforms:[{x:0,y:520,w:320,h:60},{x:420,y:520,w:300,h:60},{x:760,y:520,w:340,h:60}],
+        ledges:[{x:560,y:440,w:120,h:20},{x:840,y:380,w:120,h:20}], hazards:[{x:350,y:540,w:60,h:40}], gateAt: 700 },
+      { id:"m2", width: 1120, par: 14, platforms:[{x:0,y:520,w:360,h:60},{x:500,y:520,w:620,h:60}],
+        ledges:[{x:240,y:450,w:110,h:20},{x:760,y:430,w:110,h:20}], hazards:[{x:420,y:540,w:80,h:40}], gateAt: 560 },
+      { id:"m3", width: 1160, par: 14, platforms:[{x:0,y:520,w:380,h:60},{x:480,y:520,w:640,h:60}],
+        ledges:[{x:310,y:440,w:120,h:20},{x:700,y:380,w:120,h:20}], hazards:[{x:420,y:540,w:100,h:40}], gateAt: 600 },
+      { id:"m4", width: 1140, par: 14, platforms:[{x:0,y:520,w:420,h:60},{x:540,y:520,w:600,h:60}],
+        ledges:[{x:600,y:440,w:130,h:20},{x:900,y:390,w:130,h:20}], hazards:[{x:480,y:540,w:80,h:40}], gateAt: 640 },
+    ],
+    HARD: [
+      { id:"h1", width: 1220, par: 15, platforms:[{x:0,y:520,w:300,h:60},{x:440,y:520,w:280,h:60},{x:800,y:520,w:360,h:60}],
+        ledges:[{x:520,y:430,w:110,h:20},{x:900,y:360,w:110,h:20}], hazards:[{x:320,y:540,w:90,h:40},{x:720,y:540,w:70,h:40}], gateAt: 780 },
+      { id:"h2", width: 1240, par: 15, platforms:[{x:0,y:520,w:340,h:60},{x:520,y:520,w:300,h:60},{x:900,y:520,w:340,h:60}],
+        ledges:[{x:620,y:420,w:110,h:20}], hazards:[{x:380,y:540,w:100,h:40}], gateAt: 900 },
+      { id:"h3", width: 1260, par: 15, platforms:[{x:0,y:520,w:320,h:60},{x:500,y:520,w:320,h:60},{x:900,y:520,w:360,h:60}],
+        ledges:[{x:680,y:420,w:110,h:20},{x:960,y:360,w:110,h:20}], hazards:[{x:360,y:540,w:100,h:40},{x:780,y:540,w:70,h:40}], gateAt: 920 },
+      { id:"h4", width: 1280, par: 15, platforms:[{x:0,y:520,w:300,h:60},{x:480,y:520,w:320,h:60},{x:900,y:520,w:380,h:60}],
+        ledges:[{x:620,y:410,w:120,h:20}], hazards:[{x:340,y:540,w:110,h:40},{x:740,y:540,w:80,h:40}], gateAt: 940 },
+    ],
+    VERY_HARD: [
+      { id:"vh1", width: 1340, par: 16, platforms:[{x:0,y:520,w:300,h:60},{x:520,y:520,w:300,h:60},{x:980,y:520,w:360,h:60}],
+        ledges:[{x:700,y:400,w:110,h:20},{x:1040,y:340,w:110,h:20}], hazards:[{x:340,y:540,w:120,h:40},{x:820,y:540,w:100,h:40}], gateAt: 1000 },
+      { id:"vh2", width: 1360, par: 16, platforms:[{x:0,y:520,w:280,h:60},{x:520,y:520,w:300,h:60},{x:960,y:520,w:380,h:60}],
+        ledges:[{x:760,y:390,w:120,h:20}], hazards:[{x:320,y:540,w:120,h:40},{x:740,y:540,w:100,h:40}], gateAt: 980 },
+      { id:"vh3", width: 1380, par: 16, platforms:[{x:0,y:520,w:300,h:60},{x:540,y:520,w:300,h:60},{x:1000,y:520,w:380,h:60}],
+        ledges:[{x:820,y:380,w:120,h:20},{x:1080,y:330,w:110,h:20}], hazards:[{x:360,y:540,w:120,h:40},{x:760,y:540,w:110,h:40}], gateAt: 1020 },
+      { id:"vh4", width: 1400, par: 16, platforms:[{x:0,y:520,w:300,h:60},{x:560,y:520,w:320,h:60},{x:1020,y:520,w:400,h:60}],
+        ledges:[{x:860,y:370,w:120,h:20}], hazards:[{x:340,y:540,w:130,h:40},{x:800,y:540,w:110,h:40}], gateAt: 1060 },
+    ],
+  };
+
+  // LRU avoidance for variety
+  const recentIds = [];
+  function markRecent(id) {
+    recentIds.push(id); if (recentIds.length > 8) recentIds.shift();
+  }
+  function notRecentlyUsed(id) { return !recentIds.includes(id); }
+
+  /* ---------- Camera ---------- */
+  let camX = 0, camY = 0;
+
+  /* ---------- Section runtime stats ---------- */
+  let sectionStartTime = 0;
+  let sectionDeaths = 0;
+  let currentSection = null; // reference to last section (for par time)
+  let asking = false;
+  let gateOpenThisSection = false;
+  let answerStartTime = 0;
+
+  /* ---------- Utils ---------- */
+  function clamp(v,min,max){ return v<min?min:(v>max?max:v); }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function aabb(a,b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
+
+  /* ---------- Difficulty: bucket probabilities ---------- */
+  function homeBucketForD(D){
+    for (const t of TIERS){
+      const [lo,hi] = tierRanges[t];
+      if (D >= lo && D < hi || (t==="VERY_HARD" && D===100)) return t;
+    }
+    return "VERY_EASY";
+  }
+  function bucketProbs(D){
+    // Triangular kernels centered at 10,30,50,70,90 with width 30 (linear falloff).
+    const raw = {};
+    for (const t of TIERS){
+      const c = tierCenters[t];
+      const k = Math.max(0, 1 - Math.abs(D - c)/30);
+      raw[t] = k;
+    }
+    // Home-bucket bias
+    const home = homeBucketForD(D);
+    raw[home] += 0.25;
+
+    // Normalize
+    const sum = TIERS.reduce((s,t)=>s+raw[t],0) || 1;
+    const P = {}; TIERS.forEach(t => P[t] = raw[t]/sum);
+    return P;
+  }
+  function sampleTierByProb(P){
+    const r = Math.random();
+    let acc = 0;
+    for (const t of TIERS){
+      acc += P[t];
+      if (r <= acc) return t;
+    }
+    return "VERY_HARD";
+  }
+
+  /* ---------- Endless: spawn next section ---------- */
+  function spawnNextSection(){
+    // Pick tier by soft probabilities, but throttle rapid climbs:
+    const P = bucketProbs(D);
+    const tier = sampleTierByProb(P);
+
+    // Choose a prefab not used recently, fallback if all recent
+    const candidates = prefabs[tier].filter(p => notRecentlyUsed(p.id));
+    const pf = (candidates.length ? randChoice(candidates) : randChoice(prefabs[tier]));
+    markRecent(pf.id);
+
+    // Mutations: small dx/dy offsets scaled by D but clamped to solvable bounds.
+    const attachX = world.nextX;
+    const section = {
+      id: pf.id,
+      tier,
+      x0: attachX,
+      width: pf.width,
+      platforms: [],
+      hazards: [],
+      gate: null,
+      parTime: pf.par,
+      spawnX: attachX + 60,  // Fixed spawn position for this section
+      spawnY: 100
+    };
+
+    // Difficulty-scaled mutation amplitude (kept safe)
+    const amp = (10 + D*0.2);     // max offset pixels
+    const gapAmp = (5 + D*0.15);  // extra gap width tolerance
+    function jitter(v, max){ return v + (Math.random()*2-1)*max; }
+
+    // Platforms (base + ledges)
+    const plats = [...pf.platforms, ...(pf.ledges||[])];
+    for (const p of plats){
+      const isGround = p.h >= 40;
+      let x = attachX + p.x + (isGround ? jitter(0, gapAmp) : jitter(0, amp*0.5));
+      let y = p.y + (isGround ? 0 : jitter(0, amp*0.6));
+      let w = p.w + (isGround ? jitter(0, gapAmp) : jitter(0, 8));
+      let h = p.h;
+
+      // Clamp verticals to keep jumps solvable: ensure ledges aren't too high
+      if (!isGround) y = clamp(y, 280, 520);
+      // Width sanity
+      w = Math.max(60, w);
+
+      section.platforms.push({x, y, w, h});
+      world.platforms.push({x, y, w, h});
+    }
+
+    for (const hz of (pf.hazards||[])){
+      let x = attachX + hz.x + jitter(0, Math.min(40, amp*0.4));
+      const y = hz.y, w = Math.max(40, hz.w + jitter(0, 12)), h = hz.h;
+      section.hazards.push({x,y,w,h});
+      world.hazards.push({x,y,w,h});
+    }
+
+    // Gate: place on ground near gateAt; ensure it lands on solid platform
+    const gx = attachX + pf.gateAt;
+    const baseY = 360;
+    const gate = { x: gx, y: baseY, w: 20, h: 200, opened:false, tier, id:`gate_${sectionCounter}` };
+    adaptGateVisual(gate);
+    section.gate = gate;
+    world.gates.push(gate);
+
+    world.sections.push(section);
+    world.nextX += section.width;
+
+    currentSection = section;
+    gateOpenThisSection = false;
+    sectionStartTime = performance.now() / 1000;
+    sectionDeaths = 0;
+    
+    // Update player spawn position to this section's spawn point
+    player.spawnX = section.spawnX;
+    player.spawnY = section.spawnY;
+  }
+
+  function adaptGateVisual(g){
+    // tweak size/shape per tier (simple visuals; drawing code uses tierStyle + shape)
+    if (g.tier==="VERY_EASY"){ g.w=24; g.h=180; }
+    if (g.tier==="EASY"){ g.w=22; g.h=190; }
+    if (g.tier==="MEDIUM"){ g.w=20; g.h=200; }
+    if (g.tier==="HARD"){ g.w=18; g.h=210; }
+    if (g.tier==="VERY_HARD"){ g.w=16; g.h=220; }
+  }
+
+  /* ---------- Rendering ---------- */
+  function drawBackground(){
+    const W = canvas.width, H = canvas.height;
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, '#6b5b73'); 
+    g.addColorStop(0.5, '#9d8aa5');
+    g.addColorStop(1, '#e8d5f2');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+    // Crystal mountains in background (more muted)
+    const offset = -camX * 0.22;
+    const grd = ctx.createLinearGradient(0, H-400, 0, H);
+    grd.addColorStop(0, 'rgba(200, 180, 210, 0.3)');
+    grd.addColorStop(1, 'rgba(180, 160, 200, 0.4)');
+    ctx.fillStyle = grd;
+    for (let i=0;i<10;i++){
+      const mx = (offset + i*700);
+      ctx.beginPath();
+      ctx.moveTo(mx, H-220); ctx.lineTo(mx+200, H-380); ctx.lineTo(mx+420, H-220); ctx.closePath(); ctx.fill();
+    }
+    
+    // Giant magical flowers/mushrooms (more muted)
+    const tOff = -camX * 0.5;
+    for (let i=0;i<24;i++){
+      const x = (tOff + i*240) % 8000 - 200; 
+      drawMagicFlower(x, H-260, 1.0);
+    }
+    
+    // Floating petals (softer colors)
+    for (let i = 0; i < 20; i++) {
+      const petalX = ((time * 30 + i * 100) % (W + 100)) - 50;
+      const petalY = 100 + Math.sin(time + i) * 50 + i * 20;
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = i % 2 === 0 ? '#e6c9d8' : '#d4c2e0';
+      ctx.translate(petalX, petalY);
+      ctx.rotate(time + i);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  
+  function drawMagicFlower(x,y,s){
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    // Stem (more muted)
+    const stemGrad = ctx.createLinearGradient(0, -60, 0, 80);
+    stemGrad.addColorStop(0, '#c9b8d4');
+    stemGrad.addColorStop(1, '#8b7a9c');
+    ctx.fillStyle = stemGrad;
+    ctx.fillRect(-6,-60,12,80);
+    
+    // Flower petals (softer pink)
+    ctx.fillStyle = '#d99bb8';
+    for (let i = 0; i < 6; i++) {
+      ctx.save();
+      ctx.rotate((Math.PI * 2 * i) / 6);
+      ctx.beginPath();
+      ctx.ellipse(0, -80, 12, 25, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Center (softer)
+    ctx.fillStyle = '#e6c2d9';
+    ctx.beginPath();
+    ctx.arc(0,-70,10,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  function drawPlatform(p){
+    // Softer cloud platform
+    const grad = ctx.createLinearGradient(p.x - camX, p.y - camY, p.x - camX, p.y - camY + p.h);
+    grad.addColorStop(0, '#e6c9d8');
+    grad.addColorStop(1, '#d9b5c7');
+    ctx.fillStyle = grad;
+    
+    // Cloud shape
+    ctx.beginPath();
+    const x = p.x - camX, y = p.y - camY;
+    // Draw fluffy cloud top
+    for (let i = 0; i <= p.w; i += 20) {
+      const bump = Math.sin(i * 0.05) * 5;
+      if (i === 0) ctx.moveTo(x, y + bump);
+      else ctx.lineTo(x + i, y + bump);
+    }
+    ctx.lineTo(x + p.w, y + p.h);
+    ctx.lineTo(x, y + p.h);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Softer purple crystal edge
+    ctx.strokeStyle = '#c9b8d4';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  
+  function drawHazard(h){
+    const x = h.x - camX, y = h.y - camY;
+    // Enchanted thorns (more muted purple)
+    const grad = ctx.createLinearGradient(x, y, x, y + h.h);
+    grad.addColorStop(0, '#8b7a9c');
+    grad.addColorStop(1, '#5c4d66');
+    ctx.fillStyle = grad;
+    
+    // Draw thorny shape
+    ctx.beginPath();
+    for(let i = 0; i < h.w; i += h.w/5) {
+      ctx.moveTo(x + i, y + h.h);
+      ctx.lineTo(x + i + h.w/10, y + h.h);
+      ctx.lineTo(x + i + h.w/20, y);
+      ctx.closePath();
+    }
+    ctx.fill();
+    
+    // Glow effect
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#ff00ff';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  
+  function drawGate(g){
+    const x = g.x - camX, y = g.y - camY;
+    const st = tierStyle[g.tier];
+    ctx.save();
+    
+    // Crystal flower gate
+    ctx.fillStyle = g.opened ? "rgba(200, 200, 200, 0.3)" : st.gate;
+    ctx.strokeStyle = g.opened ? "#ccc" : st.popup;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = g.opened ? 0 : 20;
+    ctx.shadowColor = st.popup;
+    
+    // Draw different shapes based on tier
+    if (st.shape==="petals"){ 
+      // Flower petals
+      for(let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.ellipse(x + g.w/2, y + 40 + i*35, 15, 8, Math.PI/4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    if (st.shape==="hearts"){ 
+      // Hearts pattern
+      for(let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        const hx = x + g.w/2, hy = y + 30 + i*45;
+        ctx.moveTo(hx, hy + 15);
+        ctx.bezierCurveTo(hx - 10, hy, hx - 10, hy - 10, hx, hy - 5);
+        ctx.bezierCurveTo(hx + 10, hy - 10, hx + 10, hy, hx, hy + 15);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    if (st.shape==="stars"){ 
+      // Star pattern
+      for(let i = 0; i < 6; i++) {
+        drawStar(x + g.w/2, y + 25 + i*30, 10, 5, 5);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    if (st.shape==="crystals"){ 
+      // Crystal shards
+      for(let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x + g.w/2, y + 20 + i*38);
+        ctx.lineTo(x + 2, y + 35 + i*38);
+        ctx.lineTo(x + g.w/2, y + 50 + i*38);
+        ctx.lineTo(x + g.w - 2, y + 35 + i*38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    if (st.shape==="rainbow"){ 
+      // Rainbow arcs
+      const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0088ff', '#8800ff'];
+      for(let i = 0; i < colors.length; i++) {
+        ctx.strokeStyle = colors[i];
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(x + g.w/2, y + 30 + i*28, 12, Math.PI, 0);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  
+  function drawStar(cx, cy, outerRadius, innerRadius, points) {
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const angle = (Math.PI * i) / points - Math.PI / 2;
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const x = cx + Math.cos(angle) * radius;
+      const y = cy + Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+  
+  function drawPlayer(){
+    const x = player.x - camX, y = player.y - camY;
+    
+    // Update wing animation
+    player.wingPhase += 0.3;
+    
+    // Fairy body
+    const bodyGrad = ctx.createLinearGradient(x, y, x, y + player.h);
+    bodyGrad.addColorStop(0, '#ff69b4');
+    bodyGrad.addColorStop(1, '#ff1493');
+    ctx.fillStyle = bodyGrad;
+    ctx.fillRect(x + 8, y + 10, player.w - 16, player.h - 15);
+    
+    // Head
+    ctx.fillStyle = '#ffb3d9';
+    ctx.beginPath();
+    ctx.arc(x + player.w/2, y + 12, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x + player.w/2 - 6, y + 10, 3, 3);
+    ctx.fillRect(x + player.w/2 + 3, y + 10, 3, 3);
+    
+    // Wings (animated)
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    const wingOffset = Math.sin(player.wingPhase) * 5;
+    
+    // Left wing
+    const lwGrad = ctx.createLinearGradient(x - 15, y, x, y + 20);
+    lwGrad.addColorStop(0, '#d8b3ff');
+    lwGrad.addColorStop(1, '#9932cc');
+    ctx.fillStyle = lwGrad;
+    ctx.beginPath();
+    ctx.ellipse(x - 5, y + 15 + wingOffset, 12, 20, -Math.PI/6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Right wing
+    const rwGrad = ctx.createLinearGradient(x + player.w, y, x + player.w + 15, y + 20);
+    rwGrad.addColorStop(0, '#d8b3ff');
+    rwGrad.addColorStop(1, '#9932cc');
+    ctx.fillStyle = rwGrad;
+    ctx.beginPath();
+    ctx.ellipse(x + player.w + 5, y + 15 - wingOffset, 12, 20, Math.PI/6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // Sparkle trail
+    if (Math.random() < 0.3) {
+      createSparkle(player.x + player.w/2, player.y + player.h);
+    }
+  }
+
+  /* ---------- Input ---------- */
+  const keyMap = {'ArrowLeft':'left','a':'left','A':'left','ArrowRight':'right','d':'right','D':'right','ArrowUp':'up','w':'up','W':'up',' ':'up'};
+  window.addEventListener('keydown', (e)=>{
+    if (e.key === 'r' || e.key === 'R') { softReset(); return; }
+    if (asking && ['1','2','3','4'].includes(e.key)){ handleChoice(parseInt(e.key,10)-1); return; }
+    const k = keyMap[e.key]; if (k) { keys[k] = true; e.preventDefault(); }
+  }, {passive:false});
+  window.addEventListener('keyup', e => { const k = keyMap[e.key]; if (k) keys[k] = false; });
+
+  choiceEls.forEach((el, idx) => el.addEventListener('click', () => handleChoice(idx)));
+
+  /* ---------- Questions (tiered) ---------- */
+  let currentCorrectIndex = 0;
+  let currentTierForPopup = "EASY";
+  let currentQuestion = null;
+
+  function tierForQuestions(D){ return homeBucketForD(D); } // same buckets as sections
+
+  function showPromptForTier(tier){
+    currentTierForPopup = tier;
+    const st = tierStyle[tier];
+    
+    // Update card background to be much lighter/whiter
+    card.style.background = '#fff5f9';  // Very light pink, almost white
+    card.style.borderColor = st.popup;
+    card.style.boxShadow = `0 10px 30px rgba(0,0,0,0.2)`;
+    cardHeader.style.background = st.popup;
+    cardHeader.style.color = "#fff";
+    cardHeader.textContent = `${tier.replace('_', ' ')} Magic Flower Challenge`;
+    cardFooter.style.color = "#666";  // Dark gray for readability
+    
+    // Update button colors to match tier but keep them vibrant (buttons are fine)
+    choiceEls.forEach(btn => {
+      btn.style.borderColor = st.popup;
+      btn.style.background = `linear-gradient(135deg, ${st.frame}dd, ${st.popup}dd)`;
+      btn.style.color = "#fff";
+    });
+    
+    // Get next question from LLM questions
+    const Q = getNextQuestion();
+    if (!Q) {
+      // No more questions, end game
+      endGame('Magic Complete!', `You collected ${checkpointsCollected} flowers · Sparkles: ${score}`);
+      return;
+    }
+    
+    currentQuestion = Q;
+    qText.textContent = Q.question;
+    currentCorrectIndex = Q.correctAnswerIndex;
+    
+    // Ensure we have exactly 4 answers (pad or trim if needed)
+    const answers = Q.answers.slice(0, 4);
+    while (answers.length < 4) {
+      answers.push("?");
+    }
+    choiceEls.forEach((el,i) => el.textContent = answers[i] || "");
+
+    // Skip grid visualization for now
+    vizWrap.style.display = 'none';
+    cardFooter.textContent = 'Use keys 1–4 or click. Magic adapts to your play.';
+
+    promptEl.style.display = 'flex';
+    asking = true;
+    answerStartTime = performance.now()/1000;
+  }
+
+  function drawStarGrid(rows, cols){
+    vctx.clearRect(0,0,viz.width,viz.height);
+    const W = viz.width, H = viz.height;
+    // Labels
+    vctx.fillStyle = "#ffb3ff";
+    vctx.font = "16px system-ui, sans-serif";
+    vctx.textAlign = "right"; vctx.fillText(String(rows), 28, H/2);
+    vctx.textAlign = "center"; vctx.fillText(String(cols), W/2, 18);
+
+    // Grid bounds
+    const cell = Math.min(42, Math.floor((W-120)/Math.max(1,cols)), Math.floor((H-80)/Math.max(1,rows)));
+    const startX = Math.floor(W/2 - (cols*cell)/2);
+    const startY = Math.floor(H/2 - (rows*cell)/2);
+    // Axes lines
+    vctx.strokeStyle = "#ff69b4"; vctx.lineWidth = 2;
+    vctx.beginPath(); vctx.moveTo(50, 30); vctx.lineTo(W-20, 30); vctx.moveTo(50, 30); vctx.lineTo(50, H-20); vctx.stroke();
+
+    // Stars (little sparkles)
+    for (let r=0;r<rows;r++){
+      for (let c=0;c<cols;c++){
+        const x = startX + c*cell + cell/2;
+        const y = startY + r*cell + cell/2;
+        vctx.fillStyle = "#ffb3ff";
+        // Draw star
+        vctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
+          const r = i % 2 === 0 ? cell*0.3 : cell*0.15;
+          if (i === 0) vctx.moveTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+          else vctx.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+        }
+        vctx.closePath();
+        vctx.fill();
+        // Glow
+        vctx.shadowBlur = 10;
+        vctx.shadowColor = "#ff69b4";
+        vctx.fill();
+        vctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  function hidePrompt(){ asking=false; promptEl.style.display='none'; }
+
+  /* ---------- Scoring & Difficulty Update ---------- */
+  function computeAndApplyDifficultyDelta(correct){
+    // Math signal S_q
+    const t_ans = (performance.now()/1000) - answerStartTime;
+    const t_ref = 6; // ref time
+    const S_q = 0.7*(correct?1:0) + 0.3*clamp(t_ref / t_ans, 0, 1);
+
+    // Platform signal S_p over the current section
+    const t_run = (performance.now()/1000) - sectionStartTime;
+    const t_par = currentSection ? currentSection.parTime : 12;
+    const noDeath = (sectionDeaths === 0);
+    const S_p = 0.8*(noDeath?1:0) + 0.2*clamp(t_par / t_run, 0, 1);
+
+    const S = Math.min(S_q, S_p);
+
+    const prev = S_ema;
+    S_ema = 0.6*S + 0.4*S_ema;
+
+    const spread = Math.abs(S_q - S_p); // lopsidedness penalty
+    let dD = 0;
+    if (S_ema >= 0.75) dD = +(3.5 + 8*spread);
+    else if (S_ema < 0.45) dD = -(3.5 + 8*spread);
+    else dD = +(S_ema - 0.6) * 8.5;
+
+    // Hysteresis: throttle crossing up a bucket boundary unless S_ema very high
+    const beforeHome = homeBucketForD(D);
+    D = clamp(D + dD, 0, 100);
+    const afterHome = homeBucketForD(D);
+    const crossingUp = TIERS.indexOf(afterHome) > TIERS.indexOf(beforeHome);
+    if (crossingUp && S_ema < 0.9 && (sectionCounter - lastBucketUpIndex) < 2){
+      // roll back tiny amount to avoid snap up
+      D = clamp(D - Math.abs(dD)*0.7, 0, 100);
+    }
+    if (crossingUp) lastBucketUpIndex = sectionCounter;
+  }
+
+  /* ---------- Game Flow ---------- */
+  let time = 0;
+  let lives = 3;
+  let score = 0;
+  let checkpointsCollected = 0;
+  
+  const tierPoints = {
+    VERY_EASY: 10,
+    EASY: 20,
+    MEDIUM: 30,
+    HARD: 40,
+    VERY_HARD: 50
+  };
+
+  function softReset(){
+    // Keep D and S_ema; restart from a safe spot and continue spawning
+    player.x = player.spawnX;
+    player.y = player.spawnY; player.vx = 0; player.vy = 0;
+    sectionDeaths = 0; sectionStartTime = performance.now()/1000;
+    showToast('✨ Magic reset! Keep flying! ✨');
+  }
+
+  function showToast(msg){
+    toast.textContent = msg; toast.style.display='block';
+    clearTimeout(showToast._t); showToast._t = setTimeout(()=>toast.style.display='none', 1800);
+  }
+
+  /* ---------- Gate handling ---------- */
+  function askAtGate(tier){
+    if (asking) return;
+    showPromptForTier(tier);
+  }
+  function handleChoice(idx){
+    if (!asking || !currentQuestion) return;
+    const correct = (idx === currentCorrectIndex);
+    
+    // Track the answer and question history
+    GameUtils.trackAnswer(correct);
+    GameUtils.trackQuestionHistory(currentQuestion, idx, correct);
+    
+    // Visual feedback on the chosen button
+    const chosenBtn = choiceEls[idx];
+    const correctBtn = choiceEls[currentCorrectIndex];
+    
+    if (correct){
+      // Flash correct button with rainbow sparkles
+      chosenBtn.style.background = 'linear-gradient(135deg, #4ade80, #22c55e)';
+      chosenBtn.style.borderColor = '#22c55e';
+      chosenBtn.style.boxShadow = '0 0 30px #22c55e';
+      
+      const g = world.gates.find(g => !g.opened && g.tier === currentTierForPopup && Math.abs((g.x - player.x)) < 80);
+      if (g) { 
+        g.opened = true; 
+        gateOpenThisSection = true; 
+        const points = tierPoints[currentTierForPopup];
+        score += points;
+        checkpointsCollected++;
+        showToast(`✨ Magical! +${points} sparkles! Flower blooms! 🌸`);
+        // Create extra sparkles
+        for(let i = 0; i < 10; i++) {
+          createSparkle(player.x + Math.random() * 40 - 20, player.y + Math.random() * 40 - 20);
+        }
+      }
+      
+      // Send game stats
+      GameUtils.sendGameStats(false);
+      
+      setTimeout(() => {
+        hidePrompt();
+        computeAndApplyDifficultyDelta(true);
+      }, 800);
+    } else {
+      // Flash chosen button red, show correct answer in green
+      chosenBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+      chosenBtn.style.borderColor = '#dc2626';
+      correctBtn.style.background = 'linear-gradient(135deg, #4ade80, #22c55e)';
+      correctBtn.style.borderColor = '#22c55e';
+      correctBtn.style.boxShadow = '0 0 30px #22c55e';
+      
+      lives = Math.max(0, lives - 1);
+      sectionDeaths++;
+      showToast(`💔 Oops! Answer was: ${correctBtn.textContent}. Heart -1.`);
+      
+      // Send game stats
+      GameUtils.sendGameStats(false);
+      
+      setTimeout(() => {
+        hidePrompt();
+        computeAndApplyDifficultyDelta(false);
+        // Respawn at section spawn point
+        player.x = player.spawnX;
+        player.y = player.spawnY; player.vx=0; player.vy=0;
+      }, 1200);
+    }
+  }
+
+  /* ---------- Question Loading ---------- */
+  async function loadInitialQuestions() {
+    questionsLoading = true;
+    
+    const formatSpec = `Return questions in this exact JSON format:
+{
+  "question": "What is 7 × 8?",
+  "answers": ["56", "48", "54", "63"],
+  "correctAnswerIndex": 0,
+  "difficulty": "medium"
+}
+Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard`;
+    
+    const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, true);
+    
+    if (gameQuestions && gameQuestions.length > 0) {
+      questions = gameQuestions;
+      questionsReady = true;
+    } else {
+      // Fallback if no questions received
+      alert('Failed to load magical questions. Please refresh the page.');
+    }
+    questionsLoading = false;
+  }
+  
+  async function loadMoreQuestions() {
+    nextQuestionsLoading = true;
+    
+    const formatSpec = `Return questions in this exact JSON format:
+{
+  "question": "What is 7 × 8?",
+  "answers": ["56", "48", "54", "63"],
+  "correctAnswerIndex": 0,
+  "difficulty": "medium"
+}
+Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard
+Consider user performance in question history to adjust difficulty appropriately.`;
+    
+    const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, false);
+    
+    if (moreQuestions && moreQuestions.length > 0) {
+      nextQuestions = moreQuestions;
+    }
+    nextQuestionsLoading = false;
+  }
+  
+  function getNextQuestion() {
+    if (currentQuestionIndex >= questions.length) {
+      // Ran out of questions, use pre-fetched ones if available
+      if (nextQuestions.length > 0) {
+        questions = nextQuestions;
+        nextQuestions = [];
+        currentQuestionIndex = 0;
+      }
+    }
+    
+    if (currentQuestionIndex < questions.length) {
+      const q = questions[currentQuestionIndex];
+      currentQuestionIndex++;
+      
+      // Pre-fetch more questions when running low
+      if (questions.length - currentQuestionIndex <= 3 && !nextQuestionsLoading && nextQuestions.length === 0) {
+        loadMoreQuestions();
+      }
+      
+      return q;
+    }
+    return null;
+  }
+
+  /* ---------- Init world with a few sections ---------- */
+  function initWorld(){
+    world = { sections:[], nextX:0, hazards:[], platforms:[], gates:[] };
+    for (let i=0;i<4;i++){ spawnNextSection(); sectionCounter++; }
+    player.x = 120; player.y = 100; player.vx=0; player.vy=0;
+    player.spawnX = 120; player.spawnY = 100; // Store initial spawn position
+    camX = 0; camY = 0; lives = 3; score = 0; S_ema = 0.5; D = 50; lastBucketUpIndex = -999;
+  }
+  
+  /* ---------- Start/End Game Functions ---------- */
+  function startGame() {
+    if (!questionsReady) {
+      // Hide button and show loading
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('loadingMessage').style.display = 'block';
+      
+      // Wait for questions to load
+      const checkReady = setInterval(() => {
+        if (questionsReady) {
+          clearInterval(checkReady);
+          document.getElementById('loadingMessage').style.display = 'none';
+          actuallyStartGame();
+        }
+      }, 100);
+    } else {
+      actuallyStartGame();
+    }
+  }
+  
+  function actuallyStartGame() {
+    // Hide start screen
+    document.getElementById('startScreen').style.display = 'none';
+    
+    // Reset game state
+    initWorld();
+    currentQuestionIndex = 0;
+    checkpointsCollected = 0;
+    gameStarted = true;
+    
+    // Canvas is already visible and loop is already running
+  }
+  
+  function endGame(title, subtitle) {
+    gameStarted = false;
+    GameUtils.sendGameStats(true);
+    
+    const endScreen = document.getElementById('endScreen');
+    document.getElementById('endTitle').textContent = title || 'Magic Complete!';
+    document.getElementById('endSubtitle').textContent = subtitle || `Sparkles: ${score}`;
+    
+    // Show stats
+    const stats = GameUtils.getCurrentStats();
+    document.getElementById('endStats').innerHTML = `
+      <div>✨ Flight Time: ${stats.playTime}</div>
+      <div>🌸 Questions Answered: ${stats.questions}</div>
+      <div>⭐ Correct Answers: ${stats.correct}</div>
+      <div>💖 Accuracy: ${stats.accuracy}</div>
+    `;
+    
+    // Start loading more questions immediately
+    if (!nextQuestionsLoading && nextQuestions.length === 0) {
+      loadMoreQuestions();
+    }
+    
+    endScreen.style.display = 'flex';
+  }
+  
+  function continueGame() {
+    if (!nextQuestionsLoading && nextQuestions.length === 0) {
+      // No questions ready, start loading
+      loadMoreQuestions();
+    }
+    
+    if (nextQuestionsLoading || (nextQuestions.length === 0 && questions.length - currentQuestionIndex === 0)) {
+      // Show loading message
+      document.getElementById('continueBtn').style.display = 'none';
+      document.getElementById('continueLoading').style.display = 'block';
+      
+      // Wait for questions
+      const checkReady = setInterval(() => {
+        if (!nextQuestionsLoading && nextQuestions.length > 0) {
+          clearInterval(checkReady);
+          document.getElementById('continueLoading').style.display = 'none';
+          document.getElementById('continueBtn').style.display = 'block';
+          actuallyContinueGame();
+        }
+      }, 100);
+    } else {
+      actuallyContinueGame();
+    }
+  }
+  
+  function actuallyContinueGame() {
+    // Use next questions if current ones are exhausted
+    if (questions.length - currentQuestionIndex === 0 && nextQuestions.length > 0) {
+      questions = nextQuestions;
+      nextQuestions = [];
+      currentQuestionIndex = 0;
+    }
+    
+    // Reset lives but keep score and checkpoints
+    lives = 3;
+    // Reset player position to current spawn point
+    player.x = player.spawnX;
+    player.y = player.spawnY;
+    player.vx = 0;
+    player.vy = 0;
+    
+    // Reset any asking state
+    asking = false;
+    promptEl.style.display = 'none';
+    
+    // Hide end screen and restart game
+    document.getElementById('endScreen').style.display = 'none';
+    gameStarted = true;
+  }
+
+  /* ---------- Initialize Game ---------- */
+  function init() {
+    // Initialize game stats
+    GameUtils.initializeStats(props.gameId);
+    GameUtils.setupCloseDetection();
+    
+    // Load initial questions immediately
+    loadInitialQuestions();
+    
+    // Update game title and description from props
+    const title = props.name || 'Enchanted Fairy Garden';
+    document.getElementById('gameTitle').textContent = `🧚‍♀️ ${title}`;
+    if (props.gameDescription) {
+      document.getElementById('gameDescription').textContent = props.gameDescription;
+    }
+    
+    // Setup event listeners for start/continue
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('continueBtn').addEventListener('click', continueGame);
+    
+    initWorld();
+  }
+  init();
+
+  /* ---------- Main Loop ---------- */
+  let last = performance.now();
+  function loop(now){
+    let dt = Math.min((now - last)/1000, DT_LIMIT); last = now; time += dt;
+
+    // Only process game logic if game has started
+    if (!gameStarted) {
+      requestAnimationFrame(loop);
+      return;
+    }
+
+    // Update sparkles
+    updateSparkles(dt);
+
+    if (!asking){
+      // controls
+      if (keys.left && !keys.right) player.vx -= MOVE_ACCEL*dt;
+      else if (keys.right && !keys.left) player.vx += MOVE_ACCEL*dt;
+      else player.vx *= FRICTION;
+      player.vx = clamp(player.vx, -MAX_VX, MAX_VX);
+      player.vy += G*dt;
+      if (keys.up && player.onGround){ player.vy = JUMP_VY; player.onGround = false; }
+      player.x += player.vx*dt; player.y += player.vy*dt;
+
+      // Ground death / fall
+      if (player.y > 2000){ 
+        lives = Math.max(0, lives-1); 
+        sectionDeaths++; 
+        showToast('💫 Oopsie daisy! 💫'); 
+        player.x = player.spawnX; 
+        player.y=player.spawnY; 
+        player.vx=0; 
+        player.vy=0; 
+        if (lives === 0) {
+          endGame('Magic Ended!', `You collected ${checkpointsCollected} flowers and ${score} sparkles!`);
+          return;
+        }
+      }
+
+      // Collisions
+      player.onGround = false;
+      const rect = {x:player.x, y:player.y, w:player.w, h:player.h};
+      for (const p of world.platforms){
+        if (!aabb(rect,p)) continue;
+        // simple resolution
+        const prevX = player.x - player.vx*dt, prevY = player.y - player.vy*dt;
+        const prev = {x:prevX,y:prevY,w:player.w,h:player.h};
+        if (aabb(prev,p)) continue;
+        // overlap
+        const dx1 = (p.x + p.w) - rect.x, dx2 = (rect.x + rect.w) - p.x;
+        const dy1 = (p.y + p.h) - rect.y, dy2 = (rect.y + rect.h) - p.y;
+        const minX = Math.min(dx1, dx2), minY = Math.min(dy1, dy2);
+        if (minX < minY){
+          if (dx1 < dx2) player.x = p.x + p.w; else player.x = p.x - player.w;
+          player.vx = 0;
+        } else {
+          if (dy1 < dy2){ player.y = p.y + p.h; player.vy = 0; }
+          else { player.y = p.y - player.h; player.vy = 0; player.onGround = true; }
+        }
+        rect.x = player.x; rect.y = player.y;
+      }
+
+      for (const h of world.hazards){
+        if (aabb(rect,h)){
+          lives = Math.max(0, lives-1); 
+          sectionDeaths++; 
+          showToast('🌿 Enchanted thorns! 🌿');
+          player.x = player.spawnX; 
+          player.y=player.spawnY; 
+          player.vx=0; 
+          player.vy=0; 
+          if (lives === 0) {
+            endGame('Magic Ended!', `You collected ${checkpointsCollected} flowers and ${score} sparkles!`);
+            return;
+          }
+          break;
+        }
+      }
+
+      // Gate check: if touching a closed gate, ask
+      for (const g of world.gates){
+        if (g.opened) continue;
+        const gr = {x:g.x, y:g.y, w:g.w, h:g.h};
+        if (aabb(rect, gr)){
+          // stop before gate and ask
+          if (player.vx > 0) player.x = g.x - player.w - 2;
+          if (player.vx < 0) player.x = g.x + g.w + 2;
+          player.vx = 0;
+          askAtGate(g.tier);
+          break;
+        }
+      }
+
+      // Advance spawning: when player is near the end of last section, spawn next
+      const farX = player.x + canvas.width*1.0;
+      if (farX > world.nextX - 600){ spawnNextSection(); sectionCounter++; }
+
+      // If player has passed gate x of currentSection, and it's opened, consider section "complete"
+      if (currentSection && gateOpenThisSection && player.x > (currentSection.x0 + currentSection.width - 120)){
+        // soft completion; nothing else needed since endless
+        gateOpenThisSection = false;
+      }
+
+      // Camera
+      camX = player.x - canvas.width*0.4; if (camX < 0) camX = 0; camY = 0;
+    }
+
+    // Render
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawBackground();
+    world.platforms.forEach(drawPlatform);
+    world.hazards.forEach(drawHazard);
+    world.gates.forEach(drawGate);
+    drawPlayer();
+    drawSparkles();
+
+    // Update HUD elements
+    scoreEl.textContent = score;
+    livesEl.textContent = lives;
+    gatesEl.textContent = checkpointsCollected;
+    const currentDiff = homeBucketForD(D).replace('_', ' ');
+    diffEl.textContent = currentDiff;
+    diffEl.className = `diff-${homeBucketForD(D).toLowerCase().replace('_', '-')}`;
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* ---------- Prompt interaction colors per tier already handled in showPromptForTier() ---------- */
+
+})();
+</script>
+</body>
+</html>

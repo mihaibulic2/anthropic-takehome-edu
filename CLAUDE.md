@@ -58,8 +58,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [x] forward results to llm to respond
 
 ### Milestone 8: Polish / Test / Deployment
-- [ ] drop in better games
-- [ ] deploy + play test - make this set of milestones our main task list (note M1, ie milestone 1 is done)
+- [x] drop in better games
+- [x] deploy + play test - make this set of milestones our main task list
 
 ## Development Commands
 

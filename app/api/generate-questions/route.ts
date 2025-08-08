@@ -2,12 +2,29 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { myProvider } from '@/lib/ai/providers';
 
+// Multiple choice question schema
+const multipleChoiceQuestionSchema = z.object({
+  question: z.string(),
+  answers: z.array(z.string()),
+  correctAnswerIndex: z.number()
+});
+
+// Matching game question schema
+const matchingQuestionSchema = z.object({
+  question: z.string(),
+  pairsCount: z.number(),
+  left: z.record(z.string()),
+  right: z.record(z.string()),
+  answer: z.record(z.string()),
+  difficulty: z.string()
+});
+
+// Union schema that accepts both question types
 const questionSchema = z.object({
-  questions: z.array(z.object({
-    question: z.string(),
-    answers: z.array(z.string()),
-    correctAnswerIndex: z.number()
-  }))
+  questions: z.array(z.union([
+    multipleChoiceQuestionSchema,
+    matchingQuestionSchema
+  ]))
 });
 
 export async function POST(request: Request) {
@@ -16,8 +33,6 @@ export async function POST(request: Request) {
 
     // Extract relevant properties from gameProps
     const {
-      gameId,
-      selectedStyle,
       questionSpec,
       requiredQuestions,
       problemSpec,
