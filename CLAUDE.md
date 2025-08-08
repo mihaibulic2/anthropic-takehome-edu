@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - general mechanism:
   - when the user is asking to solve or explain a K-6th grade math problem, the LLM uses tool calls to see if there is an appropriate game
   - if so, it will present the game to the user via a pop-up
-  - if the user clicks the pop-up, the game will launch with custom questions tailored to the topic they asked about (and the appropriate difficulty along with an art style that could match their preferences)
+  - if the user clicks the pop-up, the game will launch with custom questions tailored to the topic they asked about (and the appropriate difficulty)
  - once the game runs out of questions, it can retrieve more questions based on the user's performance
  - if the user leaves the game or dismisses the pop-up, the LLM is notified of that (including the users stats if they played)
 
@@ -51,17 +51,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - [x] on game dismisses (X'd or finished playing), fire callback which sends sys msg saying game is done (and how it went)
     - [x] have shared libs folder
     - [x] have folder for each core game 
-- [ ] add real dynamic data
+- [x] add real dynamic data
 
-### Milestone 7: Game Expansion
-- [ ] add all other styles for 1st game
-- [ ] add more games
-    - [ ] iterate list of shared libs necessities (eg physics, art, scoring, etc)
-        - [ ] inc LLM "generateData" call (takes in core game type, art style, subject, grade level, state standard, difficulty, topic, sample questions, past performance) (calls Claude, gets json rep of questions)
-    - [ ] make 8 more core games + 4 styles for each (these are all separate game IDs) (and make shared libs as previously discussed and more as needed)
+### Milestone 7: Follow-up
+- [x] send results in the chat
+- [x] forward results to llm to respond
 
-### Milestone 8: Deployment and Testing
-- [ ] M8: deploy + play test - make this set of milestones our main task list (note M1, ie milestone 1 is done)
+### Milestone 8: Polish / Test / Deployment
+- [ ] drop in better games
+- [ ] deploy + play test - make this set of milestones our main task list (note M1, ie milestone 1 is done)
 
 ## Development Commands
 

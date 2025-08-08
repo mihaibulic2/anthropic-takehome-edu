@@ -13,6 +13,7 @@ export type DataPart = { type: 'append-message'; message: string };
 
 export const messageMetadataSchema = z.object({
   createdAt: z.string(),
+  messageType: z.string().optional(),
 });
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
@@ -53,6 +54,18 @@ export type CustomUIDataTypes = {
     style: string;
     data: string;
     message: string;
+  };
+  gameResults: {
+    gameId: string;
+    selectedStyle: string;
+    questionsAttempted: number;
+    correctAnswers: number;
+    wrongAnswers: number;
+    accuracy: number;
+    timeSpent: number;
+    startTime: number;
+    endTime: number;
+    completed: boolean;
   };
 };
 

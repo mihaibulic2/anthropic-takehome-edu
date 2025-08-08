@@ -15,12 +15,12 @@ interface GameData {
   message: string;
 }
 
-interface ClaudettePopupProps {
+interface Props {
   gameData: GameData;
   onClose: () => void;
 }
 
-export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
+export function GamePopup({ gameData, onClose }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [gameCode, setGameCode] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
           
           // Send questions back to the iframe
           const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
-          if (iframe && iframe.contentWindow) {
+          if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'QUESTIONS_GENERATED',
               requestId,
@@ -65,7 +65,7 @@ export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
           
           // Send error back to the iframe
           const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
-          if (iframe && iframe.contentWindow) {
+          if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'QUESTIONS_ERROR',
               requestId,
@@ -110,7 +110,7 @@ export function ClaudettePopup({ gameData, onClose }: ClaudettePopupProps) {
   const handleCloseGame = () => {
     // Notify the game it's about to close so it can send stats
     const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
-    if (iframe && iframe.contentWindow) {
+    if (iframe?.contentWindow) {
       iframe.contentWindow.postMessage({
         type: 'GAME_CLOSING'
       }, '*');

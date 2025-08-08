@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { ClaudettePopup } from './claudette-popup';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { GamePopup } from './game-popup';
 import { AnimatePresence } from 'framer-motion';
 
 interface GameData {
@@ -14,23 +14,37 @@ interface GameData {
   message: string;
 }
 
-interface ClaudetteContextType {
-  showClaudettePopup: (gameData: GameData) => void;
-  hideClaudettePopup: () => void;
+interface ContextType {
+  showGamePopup: (gameData: GameData) => void;
+  registerSendGameStats: (sendStats: (stats: any) => void) => void;
 }
 
-const ClaudetteContext = createContext<ClaudetteContextType | undefined>(undefined);
+const ClaudetteContext = createContext<ContextType | undefined>(undefined);
 
 export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
   const [gameData, setGameData] = useState<GameData | null>(null);
+  const [latestGameStats, setLatestGameStats] = useState<any>(null);
+  const sendGameStatsRef = useRef<((stats: any) => void) | null>(null);
 
-  const showClaudettePopup = useCallback((gameData: GameData) => {
+
+  const showGamePopup = useCallback((gameData: GameData) => {
     setGameData(gameData);
   }, []);
 
-  const hideClaudettePopup = useCallback(() => {
-    setGameData(null);
+  const registerSendGameStats = useCallback((sendStats: (stats: any) => void) => {
+    sendGameStatsRef.current = sendStats;
   }, []);
+
+
+  const handleGameClosed = useCallback(async () => {
+    // Send game stats back to chat if available
+    if (latestGameStats && sendGameStatsRef.current) {
+      sendGameStatsRef.current(latestGameStats);
+    }
+    
+    setGameData(null);
+    setLatestGameStats(null);
+  }, [latestGameStats]);
 
   // Handle LLM requests and game completion from games
   const handleGameMessage = useCallback(async (event: MessageEvent) => {
@@ -67,19 +81,14 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
           }, '*');
         }
       }
-    } else if (event.data.type === 'GAME_COMPLETED') {
-      // Handle game completion stats
-      console.log('Game completed:', event.data);
-      
-      // Show popup notification for testing
-      alert(`Game Stats Received!\n\nCompleted: ${event.data.completed}\nScore: ${event.data.stats.correctAnswers}/${event.data.stats.questionsAttempted}\nAccuracy: ${event.data.stats.accuracy}%\nTime: ${event.data.stats.timeSpent}s`);
-      
-      // TODO: Eventually send as system message to LLM
+    } else if (event.data.type === 'GAME_STATUS') {
+      // Store latest game stats  
+      setLatestGameStats(event.data.stats);
     }
   }, []);
 
   // Set up message listener
-  React.useEffect(() => {
+  useEffect(() => {
     window.addEventListener('message', handleGameMessage);
     return () => {
       window.removeEventListener('message', handleGameMessage);
@@ -87,14 +96,14 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
   }, [handleGameMessage]);
 
   return (
-    <ClaudetteContext.Provider value={{ showClaudettePopup, hideClaudettePopup }}>
+    <ClaudetteContext.Provider value={{ showGamePopup, registerSendGameStats }}>
       {children}
       <AnimatePresence>
         {gameData && (
-          <ClaudettePopup
+          <GamePopup
             key="claudette-popup"
             gameData={gameData}
-            onClose={hideClaudettePopup}
+            onClose={handleGameClosed}
           />
         )}
       </AnimatePresence>

@@ -29,6 +29,7 @@ const PurePreviewMessage = ({
   message,
   vote,
   isLoading,
+  isLastMessage,
   setMessages,
   regenerate,
   isReadonly,
@@ -38,13 +39,14 @@ const PurePreviewMessage = ({
   message: ChatMessage;
   vote: Vote | undefined;
   isLoading: boolean;
+  isLastMessage: boolean;
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
   isReadonly: boolean;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
-  const { showClaudettePopup } = useClaudette();
+  const { showGamePopup: showClaudettePopup } = useClaudette();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const attachmentsFromMessage = message.parts.filter(
@@ -87,6 +89,15 @@ const PurePreviewMessage = ({
             <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
               <div className="translate-y-px">
                 <SparklesIcon size={14} />
+              </div>
+            </div>
+          )}
+
+          {message.role === 'system' && 
+           message.parts.some(part => part.type === 'text' && (part as any).messageType === 'game-result') && (
+            <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-gradient-to-r from-purple-500 to-teal-400">
+              <div className="translate-y-px text-white text-lg">
+                🦀
               </div>
             </div>
           )}
@@ -155,6 +166,9 @@ const PurePreviewMessage = ({
                         className={cn('flex flex-col gap-4', {
                           'bg-secondary text-secondary-foreground px-4 py-3 rounded-xl':
                             message.role === 'user',
+                          'bg-gradient-to-r from-purple-50 to-teal-50 border border-purple-200 px-8 pb-4 rounded-xl':
+                            message.role === 'system' && 
+                            message.parts.some(part => part.type === 'text' && (part as any).messageType === 'game-result'),
                         })}
                       >
                         <Markdown>{sanitizeText(part.text)}</Markdown>
@@ -306,9 +320,12 @@ const PurePreviewMessage = ({
                     );
                   }
 
-                  // Automatically show game popup for first result
-                  if (output.results && output.results.length > 0) {
-                    const topGame = output.results[0];
+                  // Handle new response structure with queryResults
+                  const results = output.queryResults || (output as any).results || [];
+                  
+                  // Automatically show game popup for first result only if this is the last message
+                  if (results.length > 0 && isLastMessage) {
+                    const topGame = results[0];
                     
                     // Only show popup once per toolCallId
                     if (!shownPopupsRef.current.has(toolCallId)) {
@@ -319,8 +336,12 @@ const PurePreviewMessage = ({
                         clearTimeout(timeoutRef.current);
                       }
                       
-                      // Set new timeout
+                      // Set new timeout and re-check last-message condition before showing
                       timeoutRef.current = setTimeout(() => {
+                        if (!isLastMessage) {
+                          timeoutRef.current = null;
+                          return;
+                        }
                         showClaudettePopup({
                           gameId: topGame.gameId,
                           selectedStyle: topGame.selectedStyle,
@@ -337,7 +358,7 @@ const PurePreviewMessage = ({
                     return (
                       <div key={toolCallId} className="p-3 border rounded bg-green-50">
                         <div className="text-sm font-medium text-green-800 mb-2">
-                          🎮 Found {output.results.length} educational game{output.results.length !== 1 ? 's' : ''}!
+                          🎮 Found {results.length} educational game{results.length !== 1 ? 's' : ''}!
                         </div>
                         <div className="text-sm text-green-700">
                           Top match: <strong>{topGame.name}</strong> ({(topGame.matchScore * 100).toFixed(0)}% match)

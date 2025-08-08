@@ -15,6 +15,8 @@ const gameMatchSchema = z.object({
   }))
 });
 
+// This tool will wait for game completion before returning
+// It returns both the query results (matched games) and game results (stats)
 export const queryAndShowGames = tool({
   description: 'Search for available educational games and automatically show game popup to user',
   inputSchema: z.object({
@@ -33,7 +35,7 @@ export const queryAndShowGames = tool({
         prompt: `You are a game matching expert for educational games for kids! 
 
 # AVAILABLE GAMES:
-${JSON.stringify(gamesDatabase.coreGames, null, 2)}
+${JSON.stringify(gamesDatabase.games, null, 2)}
 
 # INFORMATION:
 - Things about the problem/topic the user is working on: ${problemSpec || 'not specified'}
@@ -64,10 +66,9 @@ Use the INFORMATION above to pick the best suited game from the AVAILABLE GAMES 
   - Useful if goal is to build up some of the challenges from a starting to ending point (include easy and final questions)
 
 - Calculate a match score (0.0 to 1.0) based on:
-   - Topic relevance (40% weight)
+   - Data format suitability for the sample questions (50% weight)
    - Grade level appropriateness (25% weight) 
-   - Art style availability (20% weight)
-   - Data format suitability for the sample questions (15% weight)
+   - Art style of the game matches the user's preferences (if any) (25% weight)
 
 - Other details about output:
    - Include a short fun name for the game (ideally a pun or something clever that's kid-friendly and we can show the user) (key: name)
@@ -82,22 +83,26 @@ Return the results in exactly this JSON format:
   "results": [
     {
       "gameId": { <ID of the selected game from the AVAILABLE GAMES list> },
-      "selectedStyle": "<which of the supportedStyles to use, eg space>",
       "questionSpec": "<string explaining type / format of question and answers>",
       "requiredQuestions": "<string with questions / answers the MUST be included>",
       "matchScore": <0.0-1.0>,
       "name": "<short fun name for the game to show the user, kid-friendly>",
       "message": "<very short cute message from 'Claudette the curious crab' to show the user to introduce, pitch, and call to action for this game>",
-      "isNew": <boolean from the selected game's isNew field>
     }
   ]
 }
 `,
       });
 
-      return { results: result.object.results };
+      return { 
+        queryResults: result.object.results,
+        gameResults: null // Will be populated when game completes
+      };
     } catch (error) {
-      return { results: [] };
+      return { 
+        queryResults: [],
+        gameResults: null
+      };
     }
   },
 });

@@ -556,7 +556,7 @@ Must have 2-4 distinct answers. correctAnswerIndex indicates 0-based index in an
         
         // Track the answer
         GameUtils.trackAnswer(isCorrect);
-        
+                
         // Update score
         setScore(prev => ({
           correct: prev.correct + (isCorrect ? 1 : 0),
@@ -567,6 +567,9 @@ Must have 2-4 distinct answers. correctAnswerIndex indicates 0-based index in an
         setFeedback(isCorrect ? 'correct' : 'incorrect');
         setTimeout(() => setFeedback(null), 1000);
         
+        // Send status update to parent
+        GameUtils.sendGameStats(false);
+
         // Move to next question or end game
         setTimeout(() => {
           const nextIndex = questionIndex + 1;
@@ -584,25 +587,25 @@ Must have 2-4 distinct answers. correctAnswerIndex indicates 0-based index in an
         return score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
       };
       
-      if (gameComplete) {
-        const stats = GameUtils.getCurrentStats();
-        return React.createElement('div', {
-          className: 'game-complete'
-        }, [
-          React.createElement('div', {
-            key: 'title',
-            className: 'complete-title'
-          }, 'Great Job!'),
-          React.createElement('div', {
-            key: 'stats',
-            className: 'complete-stats'
-          }, [
-            React.createElement('div', { key: 'score' }, `Score: ${score.correct} out of ${score.total}`),
-            React.createElement('div', { key: 'accuracy' }, `Accuracy: ${getAccuracyPercent()}%`),
-            React.createElement('div', { key: 'time' }, `Time: ${Math.round(stats.timeSpent)} seconds`)
-          ])
-        ]);
-      }
+      // if (gameComplete) {
+      //   const stats = GameUtils.getCurrentStats();
+      //   return React.createElement('div', {
+      //     className: 'game-complete'
+      //   }, [
+      //     React.createElement('div', {
+      //       key: 'title',
+      //       className: 'complete-title'
+      //     }, 'Great Job!'),
+      //     React.createElement('div', {
+      //       key: 'stats',
+      //       className: 'complete-stats'
+      //     }, [
+      //       React.createElement('div', { key: 'score' }, `Score: ${score.correct} out of ${score.total}`),
+      //       React.createElement('div', { key: 'accuracy' }, `Accuracy: ${getAccuracyPercent()}%`),
+      //       React.createElement('div', { key: 'time' }, `Time: ${Math.round(stats.timeSpent)} seconds`)
+      //     ])
+      //   ]);
+      // }
       
       if (!gameStarted || !currentQuestion) {
         return React.createElement('div', {

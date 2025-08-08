@@ -54,6 +54,7 @@ function PureMessages({
           key={message.id}
           chatId={chatId}
           message={message}
+          isLastMessage={index === messages.length - 1}
           isLoading={status === 'streaming' && messages.length - 1 === index}
           vote={
             votes

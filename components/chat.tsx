@@ -22,6 +22,7 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useClaudette } from './claudette-provider';
 
 export function Chat({
   id,
@@ -40,6 +41,7 @@ export function Chat({
   session: Session;
   autoResume: boolean;
 }) {
+  const { registerSendGameStats } = useClaudette();
   const { visibilityType } = useChatVisibility({
     chatId: id,
     initialVisibilityType,
@@ -93,6 +95,32 @@ export function Chat({
       }
     },
   });
+
+  // Register handler to send game stats when game completes
+  useEffect(() => {
+    registerSendGameStats((gameStats: any) => {
+      // Format game stats into a message
+      let statsMessage = '### Game Results\n\n';
+      statsMessage += Object.entries(gameStats).map(([key, value]) => {
+        const readableKey = key
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/[-_]/g, ' ')
+          .replace(/^./, str => str.toUpperCase())
+          .trim();
+        return `**${readableKey}:** ${value}`;
+      }).join('\n');
+      
+      // Send as a regular user message
+      // This will appear in UI, save to DB, and get LLM response
+      sendMessage({
+        role: 'user' as const,
+        parts: [{
+          type: 'text',
+          text: statsMessage
+        }]
+      });
+    });
+  }, [registerSendGameStats, sendMessage]);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');
