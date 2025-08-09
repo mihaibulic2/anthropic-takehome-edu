@@ -33,40 +33,7 @@ export function ClaudetteProvider({ children }: { children: React.ReactNode }) {
 
   // Handle LLM requests and game completion from games
   const handleGameMessage = useCallback(async (event: MessageEvent) => {
-    if (event.data.type === 'REQUEST_LLM') {
-      try {
-        const response = await fetch('/api/game-llm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: event.data.prompt,
-            gameContext: event.data.gameContext
-          })
-        });
-
-        const result = await response.json();
-
-        // Send response back to game
-        if (event.source) {
-          (event.source as Window).postMessage({
-            type: 'LLM_RESPONSE',
-            requestId: event.data.requestId,
-            response: result.response,
-            error: result.error
-          }, '*');
-        }
-      } catch (error) {
-        console.error('Error handling game LLM request:', error);
-        
-        if (event.source) {
-          (event.source as Window).postMessage({
-            type: 'LLM_RESPONSE',
-            requestId: event.data.requestId,
-            error: 'Failed to process LLM request'
-          }, '*');
-        }
-      }
-    } else if (event.data.type === 'GAME_STATUS') {
+    if (event.data.type === 'GAME_STATUS') {
       // Store latest game stats  
       setLatestGameStats(event.data.stats);
     }
