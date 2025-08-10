@@ -1,6 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { myProvider } from '@/lib/ai/providers';
+import { GameProps } from '@/lib/types';
 
 // Multiple choice question schema
 const multipleChoiceQuestionSchema = z.object({
@@ -29,44 +30,57 @@ const questionSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const { gameProps, count, formatSpec, isFirstGeneration } = await request.json();
+    const { 
+      gameProps,
+      count,
+      formatSpec,
+      questionHistory,
+    } = await request.json();
 
     // Extract relevant properties from gameProps
     const {
       questionSpec,
       requiredQuestions,
-      problemSpec,
-      userSpec
-    } = gameProps;
+    } = gameProps as GameProps;
+
+    // Format question history for the prompt
+    const formattedHistory = questionHistory && questionHistory.length > 0
+      ? questionHistory.map((item: any, index: number) => {
+          return `${index + 1}. "${item.question}"
+   Correct Answer: "${item.correctAnswer}"
+   Student's Answer: ${item.wasCorrect ? 'Correct' : `Wrong (answered: "${item.userAnswer}")`}`;
+        }).join('\n\n')
+      : null;
 
     const result = await generateObject({
       model: myProvider.languageModel('chat-model'),
       schema: questionSchema,
       prompt: `You are an educational question generator for interactive games! Your job is to create engaging, age-appropriate questions that help students learn through play.
 
-## STUDENT CONTEXT
-The student is working on: ${problemSpec || 'general math practice'}
-Student details: ${userSpec || 'elementary school student'}
-${isFirstGeneration ? 'This is the first time generating questions for this student session.' : 'This is a follow-up question generation based on student performance.'}
+## STUDENT/QUESTION CONTEXT
+The student is working on: ${questionSpec || 'multiplication tables'}
 
-## QUESTION REQUIREMENTS
-Generate exactly ${count} questions that match this specification:
-"${questionSpec || 'Basic arithmetic problems suitable for elementary students'}"
+## STUDENT PERFORMANCE HISTORY
+Here are the questions the student has already answered in the past:
+${formattedHistory || '(no questions answered yet)'}
 
-${requiredQuestions && requiredQuestions !== 'None specified' && requiredQuestions !== '' ? `
+${formattedHistory && `
+## ADAPTIVE LEARNING GUIDELINES
+Based on the student's history:
+1. **Avoid Repetition**: Do NOT repeat questions the student got correct (if they got it wrong, after some time, you can reask the question with different wrong answers / order)
+2. **Difficulty Adjustment**:
+   - If the student is getting most correct, increase difficulty
+   - If the student is getting most wrong, decrease difficulty or go to easier concepts
+   - Mix in some review questions for concepts they got wrong
+3. **Learning Patterns**: Focus more on the types of problems the student struggled with
+4. **Variety**: Even when revisiting concepts, present them in new ways to maintain engagement
+`}
+
+${requiredQuestions ? `
 ## REQUIRED QUESTIONS
-You MUST include these specific questions in your response:
+These questions MUST be present either in your response or in the past questions:
 ${requiredQuestions}
 ` : ''}
-
-## OUTPUT FORMAT
-${formatSpec || `Each question should be returned in this exact JSON format:
-{
-  "question": "What is 5 + 3?",
-  "answers": ["6", "7", "8", "9"], 
-  "correctAnswerIndex": 2
-}
-Where correctAnswerIndex is 0-3 indicating which answer in the array is correct.`}
 
 ## GENERATION GUIDELINES
 1. **Difficulty**: Questions should be appropriately challenging but not frustrating for the target student
@@ -79,7 +93,11 @@ Where correctAnswerIndex is 0-3 indicating which answer in the array is correct.
 5. **Game Compatibility**: Questions should work well in a fast-paced, visual game environment
 6. **Educational Value**: Focus on building fundamental understanding, not just memorization
 
-Return your response as a JSON object with a "questions" array containing exactly ${count} question objects.`,
+## OUTPUT FORMAT
+- Respond only with valid JSON, nothing else
+- Your questions must be in a "questions" array: { "questions": [ ... ] }
+- Question format: ${formatSpec}
+- Include exactly ${count || 10} questions in your response`,
     });
 
     return Response.json({ 

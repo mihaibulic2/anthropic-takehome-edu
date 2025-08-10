@@ -448,7 +448,7 @@
 }
 Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard`;
             
-            const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, true);
+            const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec);
             
             if (gameQuestions && gameQuestions.length > 0) {
                 questions = gameQuestions;
@@ -475,7 +475,7 @@ Answers must be strings. difficulty must be one of: very-easy, easy, medium, har
 Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard
 Consider user performance in question history to adjust difficulty appropriately.`;
             
-            const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, false);
+            const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec);
             
             if (moreQuestions && moreQuestions.length > 0) {
                 nextQuestions = moreQuestions;
@@ -549,8 +549,9 @@ Consider user performance in question history to adjust difficulty appropriately
             const isCorrect = answerIndex === question.correctAnswerIndex;
             
             // Track the answer
-            GameUtils.trackAnswer(isCorrect);
-            GameUtils.trackQuestionHistory(question, answerIndex, isCorrect);
+            const userAnswer = question.answers[answerIndex];
+            GameUtils.trackAnswer(question, userAnswer, isCorrect);
+            GameUtils.sendStats();
             
             // Highlight buttons
             buttons.forEach((btn, idx) => {

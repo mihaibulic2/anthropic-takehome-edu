@@ -674,8 +674,9 @@
     const correct = (idx === currentCorrectIndex);
     
     // Track the answer and question history
-    GameUtils.trackAnswer(correct);
-    GameUtils.trackQuestionHistory(currentQuestion, idx, correct);
+    const userAnswer = currentQuestion.answers[idx];
+    GameUtils.trackAnswer(currentQuestion, userAnswer, correct);
+    GameUtils.sendStats();
     
     // Visual feedback on the chosen button
     const chosenBtn = choiceEls[idx];
@@ -740,7 +741,7 @@
 }
 Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard`;
     
-    const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, true);
+    const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec);
     
     if (gameQuestions && gameQuestions.length > 0) {
       questions = gameQuestions;
@@ -765,7 +766,7 @@ Answers must be strings. difficulty must be one of: very-easy, easy, medium, har
 Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard
 Consider user performance in question history to adjust difficulty appropriately.`;
     
-    const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec, false);
+    const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec);
     
     if (moreQuestions && moreQuestions.length > 0) {
       nextQuestions = moreQuestions;

@@ -304,7 +304,7 @@ Format Rules:
 - Difficulty must be one of: very-easy, easy, medium, hard, very-hard.
 - Do NOT include any commentary; return ONLY the JSON array.`;
 
-    const arr = await GameUtils.generateQuestions(props, QUESTIONS_PER_BATCH, formatSpec, true);
+    const arr = await GameUtils.generateQuestions(props, QUESTIONS_PER_BATCH, formatSpec);
     questions = Array.isArray(arr) ? arr : [];
     if (questions.length === 0) {
       alert('Failed to load puzzles. Please refresh.');
@@ -316,7 +316,7 @@ Format Rules:
   async function loadMoreQuestions(){
     const formatSpec = `
 Return puzzles in the same JSON shape as before. Use recent question history to adjust difficulty. Each puzzle MUST have 2–10 pairs and consistent one-to-one mappings. Return ONLY the JSON array.`;
-    const arr = await GameUtils.generateQuestions(props, QUESTIONS_PER_BATCH, formatSpec, false);
+    const arr = await GameUtils.generateQuestions(props, QUESTIONS_PER_BATCH, formatSpec);
     nextQuestions = Array.isArray(arr) ? arr : [];
   }
 
@@ -456,7 +456,14 @@ Return puzzles in the same JSON shape as before. Use recent question history to 
     const isCorrect = (board.answer[lKey] === rKey);
 
     // Record attempt
-    GameUtils.trackAnswer(isCorrect);
+    // For matching games, track the pair attempt
+    const question = {
+      question: board.question || "Match the pairs",
+      correctAnswer: `${board.left[lKey]} → ${board.right[board.answer[lKey]]}`
+    };
+    const userAnswer = `${board.left[lKey]} → ${board.right[rKey]}`;
+    GameUtils.trackAnswer(question, userAnswer, isCorrect);
+    GameUtils.sendStats();
 
     if (isCorrect){
       leftEl.classList.remove('selected'); rightEl.classList.remove('selected');

@@ -79,3 +79,12 @@ export interface Attachment {
   url: string;
   contentType: string;
 }
+
+export interface GameProps {
+  gameId: string;
+  questionSpec: string;
+  requiredQuestions: string;
+  matchScore: number;
+  name: string;
+  message: string;
+}

@@ -4,22 +4,14 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
-
-export interface GameData {
-  gameId: string;
-  questionSpec: string;
-  requiredQuestions: string;
-  matchScore: number;
-  name: string;
-  message: string;
-}
+import { GameProps } from '@/lib/types';
 
 interface Props {
-  gameData: GameData;
+  gameProps: GameProps;
   onClose: () => void;
 }
 
-export function GamePopup({ gameData, onClose }: Props) {
+export function GamePopup({ gameProps, onClose }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [gameCode, setGameCode] = useState<string | null>(null);
@@ -28,19 +20,17 @@ export function GamePopup({ gameData, onClose }: Props) {
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
       if (event.data.type === 'GENERATE_QUESTIONS') {
-        const { requestId, gameProps, count, formatSpec, isFirstGeneration } = event.data;
+        const { requestId, gameProps, count, formatSpec, questionHistory } = event.data;
         
         try {
           const response = await fetch('/api/generate-questions', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               gameProps,
               count,
               formatSpec,
-              isFirstGeneration
+              questionHistory,
             })
           });
 
@@ -92,7 +82,7 @@ export function GamePopup({ gameData, onClose }: Props) {
       const response = await fetch('/api/fetch-game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gameData)
+        body: JSON.stringify(gameProps)
       });
 
       const result = await response.json();
@@ -139,7 +129,7 @@ export function GamePopup({ gameData, onClose }: Props) {
             srcDoc={gameCode}
             className="w-full h-full border-0"
             sandbox="allow-scripts allow-modals"
-            title={`${gameData.name} Game`}
+            title={`${gameProps.name} Game`}
           />
         </div>
       </div>
@@ -206,7 +196,7 @@ export function GamePopup({ gameData, onClose }: Props) {
           <div className="bg-white rounded-2xl py-2 px-3 text-gray-800 relative shadow-md border-2 border-pink-400 text-center">
             {/* Speech bubble tail */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 size-0 border-l-6 border-r-6 border-b-6 border-transparent border-b-white" />
-            <p className="text-sm font-medium leading-relaxed">{gameData.message}</p>
+            <p className="text-sm font-medium leading-relaxed">{gameProps.message}</p>
           </div>
         </div>
 
@@ -214,7 +204,7 @@ export function GamePopup({ gameData, onClose }: Props) {
         <div className="px-4 pb-3">
           <div className="flex items-center justify-center gap-2">
             <h3 className="text-xl font-bold text-white text-center drop-shadow-lg">
-              {gameData.name}
+              {gameProps.name}
             </h3>
           </div>
         </div>
