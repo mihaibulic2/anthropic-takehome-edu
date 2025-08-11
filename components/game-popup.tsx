@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
-import { GameProps } from '@/lib/types';
+import type { GameProps } from '@/lib/types';
 
 interface Props {
   gameProps: GameProps;
@@ -259,7 +259,7 @@ export function GamePopup({ gameProps, onClose }: Props) {
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full size-5 border-3 border-white border-top-transparent mr-2" />
-                LOADING...
+                LOADING
               </div>
             ) : (
               'PLAY!'

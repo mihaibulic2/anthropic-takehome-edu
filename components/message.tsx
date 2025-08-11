@@ -1,7 +1,8 @@
 'use client';
+
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -370,6 +371,8 @@ const PurePreviewMessage = ({
                 }
               }
 
+
+
               if (type === 'tool-requestSuggestions') {
                 const { toolCallId, state } = part;
 
@@ -412,6 +415,17 @@ const PurePreviewMessage = ({
                 }
               }
             })}
+
+            {/* Show streaming indicator if still loading */}
+            {isLoading && message.role === 'assistant' && (
+              <div className="flex items-center gap-1 text-muted-foreground text-sm mt-2">
+                <div className="flex gap-1">
+                  <span className="inline-block animate-pulse">●</span>
+                  <span className="inline-block animate-pulse animation-delay-200">●</span>
+                  <span className="inline-block animate-pulse animation-delay-400">●</span>
+                </div>
+              </div>
+            )}
 
             {!isReadonly && (
               <MessageActions
