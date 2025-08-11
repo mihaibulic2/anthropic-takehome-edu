@@ -363,10 +363,10 @@
     const VARIANT3_SUB_TARGET_X_OFFSET_METERS = 0.8; // Distance from left edge of viewport to center the sub (as fraction of viewport width)
 
     // Coin targets per variant
-    const VARIANT1_COINS_TARGET = 5;
-    const VARIANT2_COINS_TARGET = 5;
-    const VARIANT3_COINS_TARGET = 5;
-    const VARIANT3_KEEP_PLAYING_BONUS = 5;          // Additional coins to collect when "Keep Playing" is selected
+    const VARIANT1_COINS_TARGET = 3;
+    const VARIANT2_COINS_TARGET = 3;
+    const VARIANT3_COINS_TARGET = 3;
+    const VARIANT3_KEEP_PLAYING_BONUS = 6;          // Additional coins to collect when "Keep Playing" is selected
     
     // Coins per level within v3
     const V3_COINS_PER_LEVEL = 3;                   // Number of coins to collect per level
@@ -558,55 +558,22 @@ const ctx = canvas.getContext('2d');
     }
 
     function setRandomTargetY() {
-      let t;
-      
-      // Special handling for v2's last coin: must have depth > 0 AND be a round value (ends in 0 or 5)
-      if (state.ui.gameState.variant === 'v2' && state.goals.coinsCollected === VARIANT2_COINS_TARGET - 1) {
-        do {
-          const min = Math.max(state.bounds.minY, 5); // Ensure > 0 and round
-          const max = state.bounds.maxY;
-          // Generate random multiple of 5 between min and max
-          const roundValues = [];
-          for (let val = Math.ceil(min / 5) * 5; val <= max; val += 5) {
-            if (val > 0) roundValues.push(val);
-          }
-          if (roundValues.length > 0) {
-            t = roundValues[Math.floor(Math.random() * roundValues.length)];
-          } else {
-            t = 5; // fallback
-          }
-        } while (t === Math.round(state.sub.position.y));
-      } else {
-        // Normal target generation for other variants/coins
-        do { 
-          const min = state.bounds.minY;
-          const max = state.bounds.maxY;
-          t = Math.floor(Math.random() * (max - min + 1)) + min; // integer meters
-        } while (t === Math.round(state.sub.position.y));
-      }
-      
-      state.goals.targetY = t;
-      state.ui.coinStartY = Math.round(state.sub.position.y); // Remember where sub was when coin appeared
-      
+      const positionY = Math.round(state.sub.position.y);
+      state.ui.coinStartY = positionY;
+
       // Variant 3: Generate multiple choice options with level-based difficulty
       if (state.ui.gameState.variant === 'v3') {
-        // Ensure starting position meets level constraints first
-        state.ui.coinStartY = ensureStartPositionMeetsConstraints(state.ui.coinStartY);
-        // Apply level-based constraints to targets
-        t = applyV3LevelConstraints(t, state.ui.coinStartY);
-        state.goals.targetY = t;
         
-        const neededChange = state.goals.targetY - state.ui.coinStartY;
-        state.ui.correctChoice = neededChange;
-        
-        // Generate wrong choices based on level constraints
-        const wrongChoices = generateV3WrongChoices(neededChange, state.ui.coinStartY);
+        // Generate correct and wrong choices using smart logic
+        const choices = generateV3Choices(state.ui.coinStartY);
+        state.goals.targetY = choices.target;
+        state.ui.correctChoice = choices.correct;
         
         state.ui.choices = [
-          neededChange,
-          ...wrongChoices
+          choices.correct,
+          ...choices.wrong
         ];
-        console.log(`[QUESTION] Level ${state.ui.gameState.level} - Generated new question - from ${state.ui.coinStartY} to ${state.goals.targetY}, need ${neededChange}`);
+        console.log(`[QUESTION] Level ${state.ui.gameState.level} - Generated new question - from ${state.ui.coinStartY} to ${state.goals.targetY}, need ${choices.correct}`);
         console.log(`[QUESTION] Choices before shuffle: [${state.ui.choices.join(', ')}]`);
         
         // Shuffle choices
@@ -625,121 +592,141 @@ const ctx = canvas.getContext('2d');
         state.ui.showingChoices = state.ui.started || state.goals.coinsCollected > 0;
         console.log(`[QUESTION] Set showingChoices=${state.ui.started}, processingChoice=false, choiceStates reset`);
         updateHUD();
+      } else {
+        let newPos = 0;
+
+        // Special handling for v2's last coin: set target to 5 (or 10 if already at 5)
+        if (state.ui.gameState.variant === 'v2' &&
+          state.goals.coinsCollected === state.goals.coinsTarget - 1) {
+
+          if (positionY === 5) {
+            newPos = 0;
+          } else {
+            newPos = 5;
+          }
+        } else {
+          // Normal target generation for other variants/coins
+          do {
+            const min = state.bounds.minY;
+            const max = state.bounds.maxY;
+            newPos = Math.floor(Math.random() * (max - min + 1)) + min; // integer meters
+          } while (newPos === positionY);
+        }
+
+        state.goals.targetY = newPos;
       }
     }
 
     // ===============================
     // V3 LEVEL CONSTRAINT FUNCTIONS
     // ===============================
-    function applyV3LevelConstraints(targetY, startY) {
+    function generateV3Choices(startY) {
+      const validTargets = [];
+      
       switch (state.ui.gameState.level) {
         case 1:
           // Level 1: Round positive-only numbers (ends in 5s, 10s) for all values
           // Ensure both start and target are positive and round
-          let roundTarget = Math.round(targetY / 5) * 5;
-          if (roundTarget <= 0) roundTarget = 5;
-          if (roundTarget === startY) roundTarget += 5;
-          return Math.min(roundTarget, state.bounds.maxY);
+          // If we're not too close to the max, start from startY+1 to avoid negative moves
+          // limit how high we look to avoid going up to high too fast (and running out of headroom)
+          const minStart = (startY + 5 <= state.bounds.maxY) ? startY : state.bounds.minY;
+          const roundedStart = Math.ceil(minStart / 5) * 5;
+          const maxEnd = Math.min(state.bounds.maxY, startY + 15);
+          for (let y = roundedStart; y <= maxEnd; y += 5) {
+            if (y !== startY && y > 0) validTargets.push(y);
+          }
+          break;
           
         case 2:
           // Level 2: Introduce negative movements but keep starting/ending positions positive
           // Generate targets that provide meaningful variety (not just 5m and 10m)
-          let level2Target = Math.round(targetY / 5) * 5;
-          if (level2Target <= 0) level2Target = 5;
-          if (level2Target === startY) {
-            // Instead of just ±5, pick a different valid target from a wider range
-            const validTargets = [];
-            for (let y = state.bonds.minY; y <= state.bounds.maxY; y += 5) {
-              if (y !== startY) validTargets.push(y);
-            }
-            level2Target = validTargets[Math.floor(Math.random() * validTargets.length)] || (startY + 10);
+          for (let y = Math.ceil(state.bounds.minY / 5) * 5; y <= state.bounds.maxY; y += 5) {
+            if (y !== startY && y > 0) validTargets.push(y);
           }
-          return Math.max(5, Math.min(level2Target, state.bounds.maxY));
+          break;
           
         case 3:
           // Level 3: Allow crossing 0 (start or end positions can be <0)
           // Target can be negative but should be round
-          let level3Target = Math.round(targetY / 5) * 5;
-          if (level3Target === startY) {
-            level3Target = startY >= 0 ? startY - 10 : startY + 10;
+          for (let y = state.bounds.minY; y <= state.bounds.maxY; y += 5) {
+            if (y !== startY) validTargets.push(y);
           }
-          return Math.max(state.bounds.minY, Math.min(level3Target, state.bounds.maxY));
+          break;
           
         case 4:
           // Level 4: Allow non-round numbers (not just multiples of 5)
           // No rounding constraint, but still respect bounds
-          if (targetY === startY) {
-            targetY = startY >= 0 ? startY - 3 : startY + 3;
+          for (let y = state.bounds.minY; y <= state.bounds.maxY; y += 1) {
+            if (y !== startY) validTargets.push(y);
           }
-          return Math.max(state.bounds.minY, Math.min(targetY, state.bounds.maxY));
+          break;
           
         default:
-          return targetY;
+          // Fallback to old behavior
+          const correct = 5;
+          return { target: startY + correct, correct, wrong: [correct + 5, correct - 5] };
       }
-    }
-    
-    function generateV3WrongChoices(correctChoice, startY) {
+      
+      // Pick a random correct target from valid targets
+      if (validTargets.length === 0) {
+        // Fallback if no valid targets (shouldn't happen in practice)
+        const correct = 5;
+        return { target: startY + correct, correct, wrong: [correct + 5, correct - 5] };
+      }
+      
+      const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+      const correct = target - startY;
+      
+      // Generate wrong choices by picking from valid options near the correct one
+      // Convert targets to changes (movements) for easier comparison
+      const validChanges = validTargets.map(target => target - startY);
+      
+      // Find the index of the correct choice in the sorted valid changes
+      const sortedChanges = [...validChanges].sort((a, b) => a - b);
+      const correctIndex = sortedChanges.indexOf(correct);
+      
+      // Calculate the range for wrong choices: +/- max(5, valid.length * 0.2) indices
+      const range = Math.max(5, Math.floor(validChanges.length * 0.2));
+      const minIndex = Math.max(0, correctIndex - range);
+      const maxIndex = Math.min(sortedChanges.length - 1, correctIndex + range);
+      
+      // Collect potential wrong choices within the range
+      const potentialWrong = [];
+      for (let i = minIndex; i <= maxIndex; i++) {
+        if (i !== correctIndex) {
+          potentialWrong.push(sortedChanges[i]);
+        }
+      }
+      
+      // If we don't have enough potential wrong choices, expand the range
+      if (potentialWrong.length < 2) {
+        // Add more options from the entire valid set, excluding the correct one
+        const allWrong = validChanges.filter(change => change !== correct);
+        potentialWrong.push(...allWrong);
+      }
+      
+      // Fallback: if still not enough, generate some smart fallbacks
+      if (potentialWrong.length < 2) {
+        const fallbacks = [];
+        for (let offset of [3, -3, 6, -6, 9, -9]) {
+          const fallback = correct + offset;
+          if (!potentialWrong.includes(fallback) && !fallbacks.includes(fallback)) {
+            fallbacks.push(fallback);
+          }
+        }
+        potentialWrong.push(...fallbacks);
+      }
+      
+      // Remove duplicates and select 2 random wrong choices
+      const uniqueWrong = [...new Set(potentialWrong)];
       const wrongChoices = [];
       
-      switch (state.ui.gameState.level) {
-        case 1:
-        case 2:
-          // Levels 1 & 2: Generate wrong choices that are multiples of 5
-          while (wrongChoices.length < 2) {
-            let wrong = (Math.floor(Math.random() * 8) - 4) * 5; // -20 to +20 in steps of 5
-            if (wrong !== correctChoice && !wrongChoices.includes(wrong)) {
-              // For level 2, ensure wrong choices don't lead to negative end positions
-              if (state.ui.gameState.level === 2 && startY + wrong <= 0) continue;
-              wrongChoices.push(wrong);
-            }
-          }
-          break;
-          
-        case 3:
-          // Level 3: Still multiples of 5, but can cross zero
-          while (wrongChoices.length < 2) {
-            let wrong = (Math.floor(Math.random() * 12) - 6) * 5; // -30 to +30 in steps of 5
-            if (wrong !== correctChoice && !wrongChoices.includes(wrong)) {
-              wrongChoices.push(wrong);
-            }
-          }
-          break;
-          
-        case 4:
-          // Level 4: Any integer values
-          while (wrongChoices.length < 2) {
-            let wrong = Math.floor(Math.random() * 21) - 10; // -10 to +10
-            if (wrong !== correctChoice && !wrongChoices.includes(wrong)) {
-              wrongChoices.push(wrong);
-            }
-          }
-          break;
+      while (wrongChoices.length < 2 && uniqueWrong.length > 0) {
+        const randomIndex = Math.floor(Math.random() * uniqueWrong.length);
+        wrongChoices.push(uniqueWrong.splice(randomIndex, 1)[0]);
       }
       
-      return wrongChoices;
-    }
-    
-    function ensureStartPositionMeetsConstraints(startY) {
-      switch (state.ui.gameState.level) {
-        case 1:
-        case 2:
-          // Levels 1 & 2: Must be positive and round
-          if (startY <= 0 || startY % 5 !== 0) {
-            return Math.max(5, Math.round(startY / 5) * 5);
-          }
-          return startY;
-          
-        case 3:
-          // Level 3: Must be round (can be negative)
-          return Math.round(startY / 5) * 5;
-          
-        case 4:
-          // Level 4: Any integer is fine
-          return Math.round(startY);
-          
-        default:
-          return startY;
-      }
+      return { target, correct, wrong: wrongChoices };
     }
     
     function handleV3LevelProgression() {
