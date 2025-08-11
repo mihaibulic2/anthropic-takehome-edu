@@ -90,7 +90,7 @@
       padding: 8px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       display: block; visibility: hidden; pointer-events: none;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      font-family: 'Courier New', Courier, monospace;
       overflow: hidden;
       max-width: 120px;
       min-width: 80px;
@@ -105,7 +105,6 @@
       left: 0;
       height: 100%;
       background: rgba(59, 130, 246, 0.9);
-      transition: width 0.2s ease;
       width: var(--progress, 0%);
       z-index: -1;
     }
@@ -120,37 +119,50 @@
     /* Start screen (fun overlay like variant 3) */
     #startScreen {
       position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 1000; color: #0b2239; text-align: center;
-      background: rgba(0, 20, 39, 0.85);
+      z-index: 1000; color: #ffffff; text-align: center;
+      background: rgba(0, 20, 39, 0.95);
     }
     #startCard {
       background: linear-gradient(180deg, #00bfff 0%, #120b45 100%);
-      border-radius: 20px; padding: 20px 24px; width: min(480px, 88vw); max-width: 480px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-      color: #0b2239;
+      border-radius: 20px; padding: 32px 36px; width: min(520px, 90vw); max-width: 520px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      color: #ffffff;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      border: 3px solid #ffd700;
     }
     .info-section {
-      border-radius: 99px;
-      padding: 12px 20px;
+      border-radius: 12px;
+      padding: 16px 20px;
       margin: 16px 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background: rgba(0, 0, 0, 0.15);
+      font-size: 18px;
+      line-height: 1.5;
+      color: #f0f9ff;
     }
-    .info-section.whats-new { background: linear-gradient(135deg, #fef3c7, #fbbf24); }
-    .info-section.learning { background: linear-gradient(135deg, #dcfce7, #22c55e); }
-    .info-section.mission { background: linear-gradient(135deg, #ddd6fe, #8b5cf6); }
-    .info-section.how-to { background: linear-gradient(135deg, #fed7e2, #f472b6); }
-    #startTitle { font-size: 32px; margin: 24px 0 24px 0; font-weight: 800; }
-    #startBullets { font-size: 18px; color: #0b2239; text-align: left; margin: 10px auto 18px auto; max-width: 90%; padding-left: 0; }
+    .info-section .section-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+    #startTitle { 
+      font-size: 42px; margin: 0 0 20px 0; font-weight: 900; 
+      color: #ffd700; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    #startBullets { font-size: 18px; color: #f0f9ff; text-align: left; margin: 10px auto 18px auto; max-width: 90%; padding-left: 0; }
     #startBullets li { margin: 8px 0; }
     #startBtn {
       pointer-events: auto; cursor: pointer; border: none; border-radius: 9999px;
-      padding: 14px 28px; font-size: 20px; font-weight: 800; color: #063a64;
+      padding: 16px 32px; font-size: 22px; font-weight: 800; color: #063a64;
       background: linear-gradient(135deg, #fff7cc, #ffd86b);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       margin: 16px 0;
+      transition: all 0.2s ease;
     }
-    #startBtn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    #startBtn:hover { 
+      filter: brightness(1.05); transform: translateY(-2px); 
+      box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+    }
 
     /* Completion popup for variant 3 */
     #completionScreen {
@@ -176,10 +188,62 @@
     }
     #keepPlayingBtn:hover { filter: brightness(1.05); transform: translateY(-1px); }
 
+    /* Welcome overlay - shows when game first loads */
+    #welcomeOverlay {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 2000; color: #ffffff; text-align: center;
+      background: rgba(0, 20, 39, 0.95); /* Slightly more opaque than start screen */
+    }
+    #welcomeCard {
+      background: linear-gradient(180deg, #00bfff 0%, #120b45 100%);
+      border-radius: 20px; padding: 32px 36px; width: min(520px, 90vw); max-width: 520px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      color: #ffffff;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      border: 3px solid #ffd700;
+    }
+    #welcomeTitle { 
+      font-size: 42px; margin: 0 0 20px 0; font-weight: 900; 
+      color: #ffd700; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    #welcomeSubtitle {
+      font-size: 24px; margin: 0 0 24px 0; font-weight: 700;
+      color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    #welcomeMessage {
+      font-size: 18px; margin: 0 0 32px 0; line-height: 1.5;
+      color: #f0f9ff; background: rgba(0, 0, 0, 0.15); 
+      border-radius: 12px; padding: 16px 20px;
+    }
+    #welcomeBtn {
+      pointer-events: auto; cursor: pointer; border: none; border-radius: 9999px;
+      padding: 16px 32px; font-size: 22px; font-weight: 800; color: #063a64;
+      background: linear-gradient(135deg, #fff7cc, #ffd86b);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      margin: 0;
+      transition: all 0.2s ease;
+    }
+    #welcomeBtn:hover { 
+      filter: brightness(1.05); transform: translateY(-2px); 
+      box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+    }
+
 
 </style>
 </head>
 <body>
+<!-- Welcome overlay - shows when game first loads -->
+<div id="welcomeOverlay" style="display: block;">
+  <div id="welcomeCard">
+    <h1 id="welcomeTitle">Fly & Dive Adventure</h1>
+    <h2 id="welcomeSubtitle">Welcome aboard, Captain!</h2>
+    <div id="welcomeMessage">
+      Get ready to pilot your amazing submarine through sky and sea!
+    </div>
+    <button id="welcomeBtn">Start Adventure!</button>
+  </div>
+</div>
+
 <!-- Cute welcome screen -->
 <div id="startScreen" style="display: none;">
   <div id="startCard">
@@ -192,8 +256,8 @@
 <!-- Completion screen for variant 3 -->
 <div id="completionScreen" style="display: none;">
   <div id="completionCard">
-    <h1 id="completionTitle">🎉 Level Complete! 🎉</h1>
-    <div id="completionMessage">Congratulations! You collected all the coins!</div>
+    <h1 id="completionTitle">🎉 Wahooo 🎉</h1>
+    <div id="completionMessage">You collected all the treasure!</div>
     <div>
       <button id="keepPlayingBtn">Keep Playing</button>
     </div>
@@ -556,8 +620,9 @@ const ctx = canvas.getContext('2d');
         state.ui.choiceStates = ['normal', 'normal', 'normal'];
         state.ui.processingChoice = false;
         state.ui.currentQuestionAttempts = 0; // Reset attempt counter for new question
-        // Only show choices if the game has actually started
-        state.ui.showingChoices = state.ui.started;
+        // Show choices for v3 if game has started OR if we're continuing within a level
+        // (Don't show during initial setup, but do show for subsequent questions)
+        state.ui.showingChoices = state.ui.started || state.goals.coinsCollected > 0;
         console.log(`[QUESTION] Set showingChoices=${state.ui.started}, processingChoice=false, choiceStates reset`);
         updateHUD();
       }
@@ -578,11 +643,16 @@ const ctx = canvas.getContext('2d');
           
         case 2:
           // Level 2: Introduce negative movements but keep starting/ending positions positive
-          // Target must be positive and round
+          // Generate targets that provide meaningful variety (not just 5m and 10m)
           let level2Target = Math.round(targetY / 5) * 5;
           if (level2Target <= 0) level2Target = 5;
           if (level2Target === startY) {
-            level2Target = startY > 10 ? startY - 5 : startY + 5;
+            // Instead of just ±5, pick a different valid target from a wider range
+            const validTargets = [];
+            for (let y = state.bonds.minY; y <= state.bounds.maxY; y += 5) {
+              if (y !== startY) validTargets.push(y);
+            }
+            level2Target = validTargets[Math.floor(Math.random() * validTargets.length)] || (startY + 10);
           }
           return Math.max(5, Math.min(level2Target, state.bounds.maxY));
           
@@ -1338,7 +1408,7 @@ const ctx = canvas.getContext('2d');
     }
 
     function initVariant1() {
-      state.ui.gameState = { variant: 'v2' };
+      state.ui.gameState = { variant: 'v1' };
       state.bounds.minY = VARIANT1_MIN_Y_METERS;
       state.bounds.maxY = VARIANT1_MAX_Y_METERS;
       state.goals.coinsTarget = VARIANT1_COINS_TARGET;
@@ -1355,8 +1425,6 @@ const ctx = canvas.getContext('2d');
       
       showVariantOverlay(
         'Level 1',
-        // '#0ea5e9', // sky blue - flying high
-        'white',
         'Navigate using positive numbers in sky',
         `Collect ${VARIANT1_COINS_TARGET} coins at different altitudes`,
         'Use ↑/↓ arrows to move, higher numbers = higher altitude'
@@ -1381,11 +1449,9 @@ const ctx = canvas.getContext('2d');
       
       showVariantOverlay(
         'Level 2', 
-        // '#0284c7', // ocean blue - sea level
-        'white',
         'Explore positive and negative numbers',
         `Collect ${VARIANT2_COINS_TARGET} coins above and below sea level`,
-        'Now you can go underwater! Use ↑/↓ arrows to move'
+        'You can go underwater! Use ↑/↓ arrows to move'
       );
     }
 
@@ -1401,7 +1467,6 @@ const ctx = canvas.getContext('2d');
       }
       
       const level = state.ui.gameState.level;
-      const levelNumber = level + 2; // Display level 3-6
       
       // Common initialization
       state.bounds.minY = VARIANT3_MIN_Y_METERS;
@@ -1444,7 +1509,6 @@ const ctx = canvas.getContext('2d');
       if (level === 1) {
         showVariantOverlay(
           'Level 3',
-          'white',
           'Practice algebra with positive round values',
           'Collect 3 coins using equation-solving skills',
           'Select the movement that gets you to the target!'
@@ -1452,23 +1516,20 @@ const ctx = canvas.getContext('2d');
       } else if (level === 2) {
         showVariantOverlay(
           'Level 4',
-          'white',
           'Add negative movements while staying airborne',
           'Collect 3 coins using up and down movements',
-          'Now you can move down, but stay above sea level!'
+          'You can move down, but stay above sea level!'
         );
       } else if (level === 3) {
         showVariantOverlay(
           'Level 5',
-          'white',
           'Cross the surface between sky and sea',
           'Collect 3 coins above and below the water line',
-          'Your submarine can now dive underwater!'
+          'Your submarine can dive underwater!'
         );
       } else if (level === 4) {
         showVariantOverlay(
           'Level 6',
-          'white',
           'Master advanced navigation with precise values',
           'Collect 3 coins with pinpoint accuracy',
           'Use any number to reach your exact destination!'
@@ -1476,31 +1537,31 @@ const ctx = canvas.getContext('2d');
       }
     }
 
-    function showVariantOverlay(title, titleColor, learningFocus, mission, howToPlay) {
+    function showVariantOverlay(title, learningFocus, mission, howToPlay) {
       const startScreen = document.getElementById('startScreen');
       
       document.getElementById('startTitle').textContent = title;
-      document.getElementById('startTitle').style.color = titleColor;
       
       let sectionsHTML = '';
       
       sectionsHTML += `
-      <div class="info-section how-to">
-        <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #be185d;">How to Play</div>
-          <div style="font-size: 14px;">${howToPlay}</div>
+        <div class="info-section">
+          <div class="section-title" style="color: #b5ff00;">How to Play</div>
+          <div>${howToPlay}</div>
         </div>
-        <div class="info-section mission">
-          <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #581c87;">Mission</div>
-          <div style="font-size: 14px;">${mission}</div>
-          </div>
-        <div class="info-section learning">
-          <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #166534;">Learning Focus</div>
-          <div style="font-size: 14px;">${learningFocus}</div>
+        <div class="info-section">
+          <div class="section-title" style="color: #ff4da6;">Mission</div>
+          <div>${mission}</div>
+        </div>
+        <div class="info-section">
+          <div class="section-title" style="color: #60bfc5;">Learning Focus</div>
+          <div>${learningFocus}</div>
         </div>
       `;
       
       document.getElementById('startBullets').innerHTML = sectionsHTML;
       
+      // Show the overlay immediately when switching variants
       startScreen.style.display = 'flex';
       state.ui.started = false;
     }
@@ -1541,6 +1602,11 @@ const ctx = canvas.getContext('2d');
       state.ui.movementProgress = 0;
       state.ui.totalMovementDistance = distance;
       state.ui.isMoving = true;
+      
+      // Hard reset progress bar to 0% without animation
+      const bubble = document.getElementById('movementBubble');
+      bubble.style.setProperty('--progress', '0%');
+      
       showMovementBubble();
       
       function stepMove() {
@@ -1747,12 +1813,72 @@ const ctx = canvas.getContext('2d');
     }
 
     // ===============================
+    // WELCOME OVERLAY FUNCTIONS
+    // ===============================
+    function getWelcomeMessage(gameState) {
+      const variant = gameState.variant;
+      const level = gameState.level;
+      
+      // Create kid-appropriate messages based on variant/level
+      if (variant === 'v1') {
+        return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater. We'll start with basic depth control using positive numbers!";
+      } else if (variant === 'v2') {
+        return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater. We're starting at a more advanced level to practice positive and negative number navigation!";
+      } else if (variant === 'v3') {
+        if (level === 1) {
+          return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater. We're starting at a more advanced level to practice math puzzles for navigation!";
+        } else if (level === 2) {
+          return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater. We're starting at a more advanced level to practice math puzzles with negative movements while staying airborne!";
+        } else if (level === 3) {
+          return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater. We're starting at a more advanced level to practice math puzzles crossing between sky and sea!";
+        } else if (level === 4) {
+          return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater. We're starting at a more advanced level to practice math puzzles with precise navigation using any numbers!";
+        }
+      }
+      
+      // Fallback message
+      return "Welcome aboard, Captain! You're piloting an advanced submarine that flies through sky and dives underwater.";
+    }
+    
+    function showWelcomeOverlay() {
+      const welcomeOverlay = document.getElementById('welcomeOverlay');
+      const welcomeTitle = document.getElementById('welcomeTitle');
+      const welcomeMessage = document.getElementById('welcomeMessage');
+      
+      // Set the game name from props
+      if (props && props.name) {
+        welcomeTitle.textContent = props.name;
+      } else {
+        welcomeTitle.textContent = "Fly & Dive Adventure";
+      }
+      
+      // Set the appropriate welcome message based on variant/level
+      const message = getWelcomeMessage(state.ui.gameState);
+      welcomeMessage.textContent = message;
+      
+      // Show the overlay
+      welcomeOverlay.style.display = 'flex';
+    }
+    
+    function hideWelcomeOverlay() {
+      const welcomeOverlay = document.getElementById('welcomeOverlay');
+      welcomeOverlay.style.display = 'none';
+    }
+
+    // ===============================
     // INIT
     // ===============================
     (function init() {
       // Bare minimum setup - no variant-specific logic here!
       initializeCamera();
       try { if (window.GameUtils) { GameUtils.initializeStats('fly-and-dive'); GameUtils.setupCloseDetection(); } } catch (e) {}
+      
+      // Set up welcome button handler
+      document.getElementById('welcomeBtn').addEventListener('click', () => {
+        hideWelcomeOverlay();
+        // Show the level-specific start screen
+        document.getElementById('startScreen').style.display = 'flex';
+      });
       
       // Set up start button handler
       document.getElementById('startBtn').addEventListener('click', () => {
@@ -1790,6 +1916,9 @@ const ctx = canvas.getContext('2d');
       } else {
         initVariant1();
       }
+      
+      // Show welcome overlay with appropriate message
+      showWelcomeOverlay();
     })();
 </script>
 </body>
