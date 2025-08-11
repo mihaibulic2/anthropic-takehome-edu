@@ -82,9 +82,15 @@ export interface Attachment {
 
 export interface GameProps {
   gameId: string;
-  questionSpec: string;
-  requiredQuestions: string;
   matchScore: number;
   name: string;
   message: string;
+
+  questionSpec?: string;
+  requiredQuestions?: string;
+
+  stateSpec?: {
+    variant: string;
+    level?: number;
+  };
 }

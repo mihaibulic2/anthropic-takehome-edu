@@ -6,11 +6,19 @@ import gamesDatabase from '@/lib/data/games.json';
 const gameMatchSchema = z.object({
   results: z.array(z.object({
     gameId: z.string(),
-    questionSpec: z.string(),
-    requiredQuestions: z.string(),
     matchScore: z.number().min(0).max(1),
     name: z.string(),
-    message: z.string()
+    message: z.string(),
+
+    // Flexible type games
+    questionSpec: z.string().optional(),
+    requiredQuestions: z.string().optional(),
+
+    // Alt spec for choosing a game
+    stateSpec: z.object({
+      variant: z.string(),
+      level: z.number()
+    }).optional()
   }))
 });
 
@@ -51,16 +59,28 @@ Use the INFORMATION above to pick the best suited game from the AVAILABLE GAMES 
 
 - Consider the underlying topic in the problem to find a game that is well suited to that topic   
 
-- Include a question spec that explains exactly the type and difficulty of the questions:
-  - Example: "Multiplication tables under 10", "Government related vocab words for advanced 5th grader (word=answer, definition=question)"
-  - Take into account the problem/topic the user is working on and details about the user:
-    - what age/grade are they in?
-    - what's their ability?
-    - what's the topic?
+- If for a given game, the specType is "questions": 
 
-- Include any REQUIRED exact questions that must be included (optional)
-  - Useful if the user is asking for a specific question or set of questions and we want to include them
-  - Useful if goal is to build up some of the challenges from a starting to ending point (include easy and final questions)
+  - Include questionSpec that explains exactly the type and difficulty of the questions:
+    - Example: "Multiplication tables under 10", "Government related vocab words for advanced 5th grader (word=answer, definition=question)"
+    - Take into account the problem/topic the user is working on and details about the user:
+      - what age/grade are they in?
+      - what's their ability?
+      - what's the topic?
+  - And include any REQUIRED exact questions that were specifed in requiredQuestions
+    - Skip this if none specified or already asked)
+    - Useful if the user is asking for a specific question or set of questions and we want to include them
+    - Useful if goal is to build up some of the challenges from a starting to ending point (include easy and final questions)
+  - Do NOT include stateSpec!
+
+- BUT If instead for a given game, the specType is "state":
+  - Include stateSpec that explains exactly the type and difficulty of the state:
+    - Example: "variant: 'v1' | 'v2' | 'v3', level: undefined | 1 | 2 | 3 | 4"
+    - Take into account the problem/topic the user is working on and details about the user:
+      - what age/grade are they in?
+      - what's their ability?
+      - what's the topic?
+  - Do NOT include questionSpec or requiredQuestions!
 
 - Calculate a match score (0.0 to 1.0) based on:
    - Data format suitability for the questions (50% weight)
@@ -80,11 +100,16 @@ Return the results in exactly this JSON format:
   "results": [
     {
       "gameId": { <ID of the selected game from the AVAILABLE GAMES list> },
-      "questionSpec": "<string explaining type / format of question and answers>",
-      "requiredQuestions": "<string with questions / answers the MUST be included>",
       "matchScore": <0.0-1.0>,
       "name": "<short fun name for the game to show the user, kid-friendly>",
       "message": "<very short cute message from 'Claudette the curious crab' to show the user to introduce, pitch, and call to action for this game>",
+
+      // if specType is 'questions'
+      "questionSpec": "<string explaining type / format of question and answers>",
+      "requiredQuestions": "<string with questions / answers the MUST be included>",
+
+      // if specType is 'state'
+      "stateSpec": "<object saying the variant (string) and level (number, only if specified)>",
     }
   ]
 }

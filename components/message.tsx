@@ -342,14 +342,7 @@ const PurePreviewMessage = ({
                           timeoutRef.current = null;
                           return;
                         }
-                        showClaudettePopup({
-                          gameId: topGame.gameId,
-                          questionSpec: topGame.questionSpec,
-                          requiredQuestions: topGame.requiredQuestions,
-                          matchScore: topGame.matchScore,
-                          name: topGame.name,
-                          message: topGame.message
-                        });
+                        showClaudettePopup({ ...topGame });
                         timeoutRef.current = null;
                       }, 100);
                     }

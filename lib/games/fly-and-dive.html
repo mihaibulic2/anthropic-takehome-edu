@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submarine Adventure</title>
+<style>
+    html, body { 
+      margin: 0; padding: 0; overflow: hidden; background: #001427; 
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    canvas { display: block; }
+
+    /* HUD - big, front-and-center */
+  #hud {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      text-align: center; color: white; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      pointer-events: none;
+    }
+    #hud .row { display: flex; gap: 24px; justify-content: center; align-items: baseline; }
+    #hud .current, #hud .target { font-size: 36px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    #hud .arrow { font-size: 28px; opacity: 0.9; }
+    #hud .stats { margin-top: 6px; display: flex; gap: 32px; justify-content: center; }
+    #hud .stat { font-size: 16px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    #hud .equationFloat { margin-top: 6px; font-size: 18px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    
+    /* Multiple choice for variant 3 */
+    #choicePanel {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: linear-gradient(180deg, #00bfff 0%, #120b45 100%);
+      border-radius: 20px; padding: 20px 24px; width: min(480px, 88vw); max-width: 480px;
+      border: 2px solid #ffd700;
+      color: #ffffff; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    #choicePanel h3 { margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: white; }
+    #choicePanel .equation-section { margin: 16px 0; }
+    #choicePanel .equation-container { 
+      display: flex; align-items: center; justify-content: center; gap: 16px; 
+      background: rgba(255, 255, 255, 0.9); color: #0b2239;
+      padding: 16px 20px; border-radius: 99px; margin: 8px auto;
+      width: fit-content; max-width: 90%;
+    }
+    #choicePanel .equation-part { 
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    #choicePanel .equation-number { 
+      font-size: 28px; font-weight: 700; line-height: 1;
+    }
+    #choicePanel .equation-label { 
+      font-size: 10px; font-weight: 600; opacity: 0.7; text-align: center;
+    }
+    #choicePanel .equation-operator { 
+      font-size: 24px; font-weight: 700; color: #0b2239;
+    }
+    #choicePanel .choices { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; max-width: 50%; margin-left: auto; margin-right: auto; }
+    #choicePanel .choice { 
+      background: linear-gradient(135deg, #fff7cc, #ffd86b); 
+      color: #0b2239;
+      padding: 16px 20px; border-radius: 99px; cursor: pointer; 
+      transition: all 0.2s; font-weight: 600; font-size: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: none;
+    }
+    #choicePanel .choice:hover { 
+      background: linear-gradient(135deg, #fef3c7, #fbbf24); 
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    #choicePanel .choice.correct { 
+      background: #32d07e !important; 
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3) !important;
+    }
+    #choicePanel .choice.incorrect { 
+      background: #f64e4e !important; 
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3) !important;
+    }
+    #choicePanel .choice.dimmed { 
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    /* Movement bubble */
+    #movementBubble {
+      position: fixed; z-index: 100;
+      background: rgba(59, 130, 246, 0.3); color: white;
+      padding: 8px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: block; visibility: hidden; pointer-events: none;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      overflow: hidden;
+      max-width: 120px;
+      min-width: 80px;
+      left: -200px; /* Start off-screen */
+      top: -200px;  /* Start off-screen */
+    }
+    
+    #movementBubble::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: rgba(59, 130, 246, 0.9);
+      transition: width 0.2s ease;
+      width: var(--progress, 0%);
+      z-index: -1;
+    }
+
+    /* Gauge label */
+    #labels {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      color: white; opacity: 0.85; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      font-size: 14px; pointer-events: none;
+    }
+
+    /* Start screen (fun overlay like variant 3) */
+    #startScreen {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1000; color: #0b2239; text-align: center;
+      background: rgba(0, 20, 39, 0.85);
+    }
+    #startCard {
+      background: linear-gradient(180deg, #00bfff 0%, #120b45 100%);
+      border-radius: 20px; padding: 20px 24px; width: min(480px, 88vw); max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      color: #0b2239;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    .info-section {
+      border-radius: 99px;
+      padding: 12px 20px;
+      margin: 16px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .info-section.whats-new { background: linear-gradient(135deg, #fef3c7, #fbbf24); }
+    .info-section.learning { background: linear-gradient(135deg, #dcfce7, #22c55e); }
+    .info-section.mission { background: linear-gradient(135deg, #ddd6fe, #8b5cf6); }
+    .info-section.how-to { background: linear-gradient(135deg, #fed7e2, #f472b6); }
+    #startTitle { font-size: 32px; margin: 24px 0 24px 0; font-weight: 800; }
+    #startBullets { font-size: 18px; color: #0b2239; text-align: left; margin: 10px auto 18px auto; max-width: 90%; padding-left: 0; }
+    #startBullets li { margin: 8px 0; }
+    #startBtn {
+      pointer-events: auto; cursor: pointer; border: none; border-radius: 9999px;
+      padding: 14px 28px; font-size: 20px; font-weight: 800; color: #063a64;
+      background: linear-gradient(135deg, #fff7cc, #ffd86b);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      margin: 16px 0;
+    }
+    #startBtn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+    /* Completion popup for variant 3 */
+    #completionScreen {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1000; color: #0b2239; text-align: center;
+      background: rgba(0, 20, 39, 0.85);
+    }
+    #completionCard {
+      background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+      border-radius: 20px; padding: 20px 24px; width: min(480px, 88vw); max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      color: #ffffff;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    #completionTitle { font-size: 32px; margin: 24px 0 24px 0; font-weight: 800; }
+    #completionMessage { font-size: 18px; margin: 10px auto 18px auto; max-width: 90%; }
+    #keepPlayingBtn {
+      pointer-events: auto; cursor: pointer; border: none; border-radius: 9999px;
+      padding: 14px 28px; font-size: 16px; font-weight: 700; color: #047857;
+      background: linear-gradient(135deg, #fff7cc, #ffd86b);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      margin: 8px;
+    }
+    #keepPlayingBtn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+
+</style>
+</head>
+<body>
+<!-- Cute welcome screen -->
+<div id="startScreen" style="display: none;">
+  <div id="startCard">
+    <h1 id="startTitle">Level 1</h1>
+    <ul id="startBullets"> </ul>
+    <button id="startBtn">Let's Go!</button>
+  </div>
+  </div>
+
+<!-- Completion screen for variant 3 -->
+<div id="completionScreen" style="display: none;">
+  <div id="completionCard">
+    <h1 id="completionTitle">🎉 Level Complete! 🎉</h1>
+    <div id="completionMessage">Congratulations! You collected all the coins!</div>
+    <div>
+      <button id="keepPlayingBtn">Keep Playing</button>
+    </div>
+  </div>
+</div>
+
+<div id="hud">
+    <div class="row">
+      <div id="hudCurrent" class="current">Current: 0m</div>
+      <div id="direction" class="arrow">↑</div>
+      <div id="hudTarget" class="target">Target: 10m</div>
+    </div>
+    <div class="stats">
+      <div id="hudCoinsCollected" class="stat">Coins Collected: 0</div>
+      <div id="hudCoinsLeft" class="stat">Coins Left: 0</div>
+    </div>
+</div>
+
+  
+  <!-- Multiple choice panel for variant 3 -->
+  <div id="choicePanel" style="display: none;">
+    <h3>How far should we move?</h3>
+    <div class="equation-section">
+      <div class="equation-container">
+        <div class="equation-part">
+          <div class="equation-number" id="currentPosition">?</div>
+          <div class="equation-label">Current</div>
+        </div>
+        <div class="equation-operator">+</div>
+        <div class="equation-part">
+          <div class="equation-number">?</div>
+          <div class="equation-label">Move</div>
+        </div>
+        <div class="equation-operator">=</div>
+        <div class="equation-part">
+          <div class="equation-number" id="targetPosition">?</div>
+          <div class="equation-label">Target</div>
+        </div>
+      </div>
+    </div>
+    <div class="choices">
+      <div class="choice" onclick="console.log('[HTML] Click event fired for choice 0'); selectChoice(0)">1: Move <span id="choice0">?</span></div>
+      <div class="choice" onclick="console.log('[HTML] Click event fired for choice 1'); selectChoice(1)">2: Move <span id="choice1">?</span></div>
+      <div class="choice" onclick="console.log('[HTML] Click event fired for choice 2'); selectChoice(2)">3: Move <span id="choice2">?</span></div>
+    </div>
+    <div style="margin-top: 16px; font-size: 14px; opacity: 0.7;">Press 1, 2, or 3 to choose</div>
+  </div>
+  
+  <!-- Movement bubble that appears during movement -->
+  <div id="movementBubble">Moved 0m</div>
+
+<canvas id="game"></canvas>
+
+<script>
+    // ===============================
+    // GAME PROPS (injected by server)
+    // ===============================
+    const props = {{GAME_PROPS}};
+    
+    // ===============================
+    // CONSTANTS (NO MAGIC NUMBERS)
+    // ===============================
+    
+    // Coin types for variant progression
+    const COIN_TYPES = {
+      BASIC: 'basic',
+      COOL: 'cool', 
+      JEWEL: 'jewel',
+      DIAMOND: 'diamond',
+      SMALL_CHEST: 'small_chest',
+      BIG_CHEST: 'big_chest'
+    };
+    
+    // Map variants to coin types (temporary mapping until v3 gets levels)
+    const VARIANT_COIN_MAP = {
+      'v1': COIN_TYPES.COOL,
+      'v2': COIN_TYPES.DIAMOND, 
+      'v3': COIN_TYPES.BIG_CHEST
+    };
+    const PIXELS_PER_METER = 28;                 // Render scale only. All game math is in meters.
+    const SAFE_ZONE_FRACTION = 0.10;             // 10% margin from each viewport edge
+    const INPUT_STEP_METERS = 1;                 // Move amount per Arrow press (meters)
+    const SUB_WIDTH_METERS = 3.0;                // Sub width in meters
+    const SUB_HEIGHT_METERS = 1.6;               // Sub height in meters
+    const SUB_COLLISION_GROWTH_METERS = 0.25;    // Inflate sub hitbox for coin pickup
+    const COIN_RADIUS_METERS = 0.7;              // Coin radius in meters
+    const COIN_SPEED_MPS = 12;                   // Coin horizontal drift speed (m/s) from right to left
+    const COIN_SPAWN_OFFSET_METERS = 5;          // How far off-screen to spawn (meters)
+    const COIN_CULL_MARGIN_METERS = 10;          // How far past left to cull (meters)
+    // HUD_UPDATE_INTERVAL_MS removed - now event-driven
+    const EQUATION_FLOAT_VISIBLE_MS = 1200;      // Deep Explorer: keep movement equation visible after last move
+    const MAX_SPEED_MPS = 8;                     // Maximum movement speed for automatic movement (meters per second)
+
+    // Variant 1 bounds (sky only): +5m to +50m
+    const VARIANT1_MIN_Y_METERS = 5;             // Minimum allowed sub y (meters)
+    const VARIANT1_MAX_Y_METERS = 50;            // Maximum allowed sub y (meters)
+    // Variant 2 bounds (deep explorer): -50m to +50m
+    const VARIANT2_MIN_Y_METERS = -50;
+    const VARIANT2_MAX_Y_METERS = 50;
+    // Variant 3 bounds (equation explorer): -100m to +50m
+    const VARIANT3_MIN_Y_METERS = -100;
+    const VARIANT3_MAX_Y_METERS = 50;
+    const VARIANT3_SUB_TARGET_X_OFFSET_METERS = 0.8; // Distance from left edge of viewport to center the sub (as fraction of viewport width)
+
+    // Coin targets per variant
+    const VARIANT1_COINS_TARGET = 5;
+    const VARIANT2_COINS_TARGET = 5;
+    const VARIANT3_COINS_TARGET = 5;
+    const VARIANT3_KEEP_PLAYING_BONUS = 5;          // Additional coins to collect when "Keep Playing" is selected
+    
+    // Coins per level within v3
+    const V3_COINS_PER_LEVEL = 3;                   // Number of coins to collect per level
+
+    // Gauge styling (render-time only)
+    const GAUGE_WIDTH_PX = 64;                   // Gauge strip width in pixels
+    const GAUGE_MAJOR_TICK_M = 10;               // Major tick spacing in meters
+    const GAUGE_MINOR_TICK_M = 5;                // Minor tick spacing in meters
+
+    // Colors
+    const COLOR_SKY_TOP = '#8ed0ff';
+    const COLOR_SKY_HORIZON = '#ffb56b';
+    const COLOR_SEA_SURFACE = '#00bfff';
+    const COLOR_SEA_DEEP = '#120b45';
+    const COLOR_ZERO_LINE = '#ffffff';
+    const COLOR_GAUGE_TEXT = '#e7f2ff';
+    // Submarine gradient colors
+    const COLOR_SUB_GRADIENT_LIGHT = '#ffef82';
+    const COLOR_SUB_GRADIENT_DARK = '#ffc107';
+    const COLOR_SUB_WINDOW = '#79c2ff';
+    const COLOR_COIN_FILL = '#ffd700';
+    const COLOR_COIN_STROKE = '#b58900';
+    const COLOR_TARGET_MARK = '#3aa6ff';
+    const COLOR_CURRENT_MARK = '#ff4d4d';
+
+    // Background animation constants
+    const BUBBLE_SPAWN_RATE = 0.5;               // Bubbles per second
+    const CLOUD_SPAWN_RATE = 0.2;                // Clouds per second
+    const BUBBLE_SPEED_RANGE = [2, 6];           // Min/max bubble speed (m/s)
+    const CLOUD_SPEED_RANGE = [1, 3];            // Min/max cloud speed (m/s)
+    const BUBBLE_SIZE_RANGE = [0.2, 0.8];        // Min/max bubble radius (meters)
+    const CLOUD_SIZE_RANGE = [1.5, 4.0];         // Min/max cloud radius (meters)
+    const MIN_CLOUD_HEIGHT = 10;                 // Clouds must stay above this altitude (meters)
+    const MAX_BUBBLE_HEIGHT = -10;               // Bubbles must stay below this altitude (meters)
+
+    // ===============================
+    // GAME PROPS PARSING
+    // ===============================
+    function parseGameProps(props) {
+      // Handle case where props is undefined, not an object, or missing properties
+      if (!props || typeof props !== 'object' || !props.stateSpec) {
+        console.log('[GAME_PROPS] Props is undefined or invalid, using fallback v1');
+        return { variant: 'v1' };
+      }
+      
+      const { variant, level } = props.stateSpec;
+      
+      // Validate variant
+      if (!variant || typeof variant !== 'string' || !['v1', 'v2', 'v3'].includes(variant)) {
+        console.log('[GAME_PROPS] Invalid variant, using fallback v1', props);
+        return { variant: 'v1' };
+      }
+      
+      // For v3, level is required and must be 1-4
+      if (variant === 'v3') {
+        if (!level || typeof level !== 'number' || level < 1 || level > 4) {
+          console.log('[GAME_PROPS] v3 variant requires valid level (1-4), using fallback v1', props);
+          return { variant: 'v1' };
+        }
+        console.log(`[GAME_PROPS] Parsed v3 with level ${level}`);
+        return { variant: 'v3', level };
+      }
+      
+      // For v1/v2, level should be undefined (ignore if present)
+      console.log(`[GAME_PROPS] Parsed ${variant}`);
+      return { variant };
+    }
+
+    // ===============================
+    // GAME STATS TRACKING
+    // ===============================
+    function trackCoinCollection() {
+      // Create a question object for tracking
+      const variant = state.ui.gameState.variant;
+      let isCorrect = true; // Default for v1/v2
+      
+      // For v3, correct only if first attempt
+      if (variant === 'v3') {
+        isCorrect = state.ui.currentQuestionAttempts === 1;
+      }
+      
+      // Create question object that matches expected format
+      const question = {
+        question: `Navigate from ${state.ui.coinStartY}m to ${state.goals.targetY}m`,
+        correctAnswer: variant === 'v3' ? `Move ${state.ui.correctChoice}m` : 'Collect coin',
+        answers: variant === 'v3' ? state.ui.choices.map(c => `${c}m`) : ['Collect coin'],
+        correctAnswerIndex: variant === 'v3' ? state.ui.choices.indexOf(state.ui.correctChoice) : 0
+      };
+      
+      const userAnswer = variant === 'v3' ? `Move ${state.ui.correctChoice}m` : 'Collect coin';
+      
+      GameUtils.trackAnswer(question, userAnswer, isCorrect);
+      GameUtils.sendGameStats(false);
+      console.log(`[GAME_STATS] Tracked coin collection: variant=${variant}, correct=${isCorrect}, attempts=${state.ui.currentQuestionAttempts}`);
+    }
+
+    // ===============================
+    // CANVAS SETUP
+    // ===============================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // ===============================
+    // WORLD <-> PIXEL MAPPING (render only)
+    // y increases UP in world; canvas y increases DOWN. Camera is a world-space AABB.
+    // ===============================
+    function viewportWidthMeters(state) {
+      return state.camera.bottomRight.x - state.camera.topLeft.x;
+    }
+    function viewportHeightMeters(state) {
+      return state.camera.topLeft.y - state.camera.bottomRight.y;
+    }
+    function worldToPixelX(state, xMeters) {
+      return (xMeters - state.camera.topLeft.x) * PIXELS_PER_METER;
+    }
+    function worldToPixelY(state, yMeters) {
+      return (state.camera.topLeft.y - yMeters) * PIXELS_PER_METER;
+    }
+    function metersToPixels(m) { return m * PIXELS_PER_METER; }
+
+    // ===============================
+    // STATE (everything in METERS)
+    // ===============================
+    const state = {
+      time: {
+        lastFrameMs: performance.now(),
+      },
+      // Camera defined as two points in meters (top-left, bottom-right)
+      camera: {
+        topLeft: { x: 0, y: 30 },
+        bottomRight: { x: 0, y: 0 }, // set properly in init()
+      },
+      // Player submarine, position in meters, no physics engine
+      sub: {
+        position: { x: 10, y: 20 },
+        width: SUB_WIDTH_METERS,
+        height: SUB_HEIGHT_METERS,
+      },
+      // Goals and scoring
+      goals: {
+        targetY: 30,           // meters
+        score: 0,
+        coinsCollected: 0,
+        coinsTarget: 10,
+      },
+      // Entities in world coordinates (meters)
+      world: {
+        coins: [],             // { position:{x,y}, radius, velocity:{x,y}, type }
+        bubbles: [],           // { position:{x,y}, radius, velocity:{x,y}, type }
+        clouds: [],            // { position:{x,y}, radius, velocity:{x,y} }
+      },
+      // Variant bounds constrain sub movement (meters)
+      bounds: {
+        minY: VARIANT1_MIN_Y_METERS,
+        maxY: VARIANT1_MAX_Y_METERS,
+      },
+      ui: {
+        started: false,
+        gameState: parseGameProps(props), // Initialize from GAME_PROPS with validation
+        lastMoveMs: 0,
+        lastMoveFromY: 0,
+        equationFloatText: '',
+        coinStartY: 0,  // Y position when current coin appeared
+        showingChoices: false,
+        choices: [],
+        correctChoice: 0,
+        movementProgress: 0,  // How many meters moved during current movement
+        totalMovementDistance: 0,  // Total distance for current movement (for progress bar)
+        isMoving: false,      // Whether submarine is currently moving automatically
+        processingChoice: false,  // Prevent multiple choice selections
+        choiceStates: ['normal', 'normal', 'normal'],  // Track visual state of each choice
+        currentQuestionAttempts: 0,  // Track attempts for current v3 question
+      }
+    };
+
+    function initializeCamera() {
+      const viewWidthM = canvas.width / PIXELS_PER_METER;
+      const viewHeightM = canvas.height / PIXELS_PER_METER;
+      state.camera.topLeft = { x: 0, y: 30 };
+      state.camera.bottomRight = { x: state.camera.topLeft.x + viewWidthM, y: state.camera.topLeft.y - viewHeightM };
+      // Place sub inside initial viewport
+      state.sub.position.x = viewWidthM * 0.3;
+    }
+
+    function setRandomTargetY() {
+      let t;
+      
+      // Special handling for v2's last coin: must have depth > 0 AND be a round value (ends in 0 or 5)
+      if (state.ui.gameState.variant === 'v2' && state.goals.coinsCollected === VARIANT2_COINS_TARGET - 1) {
+        do {
+          const min = Math.max(state.bounds.minY, 5); // Ensure > 0 and round
+          const max = state.bounds.maxY;
+          // Generate random multiple of 5 between min and max
+          const roundValues = [];
+          for (let val = Math.ceil(min / 5) * 5; val <= max; val += 5) {
+            if (val > 0) roundValues.push(val);
+          }
+          if (roundValues.length > 0) {
+            t = roundValues[Math.floor(Math.random() * roundValues.length)];
+          } else {
+            t = 5; // fallback
+          }
+        } while (t === Math.round(state.sub.position.y));
+      } else {
+        // Normal target generation for other variants/coins
+        do { 
+          const min = state.bounds.minY;
+          const max = state.bounds.maxY;
+          t = Math.floor(Math.random() * (max - min + 1)) + min; // integer meters
+        } while (t === Math.round(state.sub.position.y));
+      }
+      
+      state.goals.targetY = t;
+      state.ui.coinStartY = Math.round(state.sub.position.y); // Remember where sub was when coin appeared
+      
+      // Variant 3: Generate multiple choice options with level-based difficulty
+      if (state.ui.gameState.variant === 'v3') {
+        // Ensure starting position meets level constraints first
+        state.ui.coinStartY = ensureStartPositionMeetsConstraints(state.ui.coinStartY);
+        // Apply level-based constraints to targets
+        t = applyV3LevelConstraints(t, state.ui.coinStartY);
+        state.goals.targetY = t;
+        
+        const neededChange = state.goals.targetY - state.ui.coinStartY;
+        state.ui.correctChoice = neededChange;
+        
+        // Generate wrong choices based on level constraints
+        const wrongChoices = generateV3WrongChoices(neededChange, state.ui.coinStartY);
+        
+        state.ui.choices = [
+          neededChange,
+          ...wrongChoices
+        ];
+        console.log(`[QUESTION] Level ${state.ui.gameState.level} - Generated new question - from ${state.ui.coinStartY} to ${state.goals.targetY}, need ${neededChange}`);
+        console.log(`[QUESTION] Choices before shuffle: [${state.ui.choices.join(', ')}]`);
+        
+        // Shuffle choices
+        for (let i = state.ui.choices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [state.ui.choices[i], state.ui.choices[j]] = [state.ui.choices[j], state.ui.choices[i]];
+        }
+        console.log(`[QUESTION] Choices after shuffle: [${state.ui.choices.join(', ')}], correct: ${state.ui.correctChoice}`);
+        
+        // Reset choice states for new question
+        state.ui.choiceStates = ['normal', 'normal', 'normal'];
+        state.ui.processingChoice = false;
+        state.ui.currentQuestionAttempts = 0; // Reset attempt counter for new question
+        // Only show choices if the game has actually started
+        state.ui.showingChoices = state.ui.started;
+        console.log(`[QUESTION] Set showingChoices=${state.ui.started}, processingChoice=false, choiceStates reset`);
+        updateHUD();
+      }
+    }
+
+    // ===============================
+    // V3 LEVEL CONSTRAINT FUNCTIONS
+    // ===============================
+    function applyV3LevelConstraints(targetY, startY) {
+      switch (state.ui.gameState.level) {
+        case 1:
+          // Level 1: Round positive-only numbers (ends in 5s, 10s) for all values
+          // Ensure both start and target are positive and round
+          let roundTarget = Math.round(targetY / 5) * 5;
+          if (roundTarget <= 0) roundTarget = 5;
+          if (roundTarget === startY) roundTarget += 5;
+          return Math.min(roundTarget, state.bounds.maxY);
+          
+        case 2:
+          // Level 2: Introduce negative movements but keep starting/ending positions positive
+          // Target must be positive and round
+          let level2Target = Math.round(targetY / 5) * 5;
+          if (level2Target <= 0) level2Target = 5;
+          if (level2Target === startY) {
+            level2Target = startY > 10 ? startY - 5 : startY + 5;
+          }
+          return Math.max(5, Math.min(level2Target, state.bounds.maxY));
+          
+        case 3:
+          // Level 3: Allow crossing 0 (start or end positions can be <0)
+          // Target can be negative but should be round
+          let level3Target = Math.round(targetY / 5) * 5;
+          if (level3Target === startY) {
+            level3Target = startY >= 0 ? startY - 10 : startY + 10;
+          }
+          return Math.max(state.bounds.minY, Math.min(level3Target, state.bounds.maxY));
+          
+        case 4:
+          // Level 4: Allow non-round numbers (not just multiples of 5)
+          // No rounding constraint, but still respect bounds
+          if (targetY === startY) {
+            targetY = startY >= 0 ? startY - 3 : startY + 3;
+          }
+          return Math.max(state.bounds.minY, Math.min(targetY, state.bounds.maxY));
+          
+        default:
+          return targetY;
+      }
+    }
+    
+    function generateV3WrongChoices(correctChoice, startY) {
+      const wrongChoices = [];
+      
+      switch (state.ui.gameState.level) {
+        case 1:
+        case 2:
+          // Levels 1 & 2: Generate wrong choices that are multiples of 5
+          while (wrongChoices.length < 2) {
+            let wrong = (Math.floor(Math.random() * 8) - 4) * 5; // -20 to +20 in steps of 5
+            if (wrong !== correctChoice && !wrongChoices.includes(wrong)) {
+              // For level 2, ensure wrong choices don't lead to negative end positions
+              if (state.ui.gameState.level === 2 && startY + wrong <= 0) continue;
+              wrongChoices.push(wrong);
+            }
+          }
+          break;
+          
+        case 3:
+          // Level 3: Still multiples of 5, but can cross zero
+          while (wrongChoices.length < 2) {
+            let wrong = (Math.floor(Math.random() * 12) - 6) * 5; // -30 to +30 in steps of 5
+            if (wrong !== correctChoice && !wrongChoices.includes(wrong)) {
+              wrongChoices.push(wrong);
+            }
+          }
+          break;
+          
+        case 4:
+          // Level 4: Any integer values
+          while (wrongChoices.length < 2) {
+            let wrong = Math.floor(Math.random() * 21) - 10; // -10 to +10
+            if (wrong !== correctChoice && !wrongChoices.includes(wrong)) {
+              wrongChoices.push(wrong);
+            }
+          }
+          break;
+      }
+      
+      return wrongChoices;
+    }
+    
+    function ensureStartPositionMeetsConstraints(startY) {
+      switch (state.ui.gameState.level) {
+        case 1:
+        case 2:
+          // Levels 1 & 2: Must be positive and round
+          if (startY <= 0 || startY % 5 !== 0) {
+            return Math.max(5, Math.round(startY / 5) * 5);
+          }
+          return startY;
+          
+        case 3:
+          // Level 3: Must be round (can be negative)
+          return Math.round(startY / 5) * 5;
+          
+        case 4:
+          // Level 4: Any integer is fine
+          return Math.round(startY);
+          
+        default:
+          return startY;
+      }
+    }
+    
+    function handleV3LevelProgression() {
+      if (state.goals.coinsCollected >= state.goals.coinsTarget) {
+        // Level complete, advance to next level
+        if (state.ui.gameState.level >= 4) {
+          // All levels complete
+          showCompletionScreen();
+          return;
+        } else {
+          // Create new state object for next level
+          state.ui.gameState = { variant: 'v3', level: state.ui.gameState.level + 1 };
+          // Initialize the new level
+          initVariant3();
+          return;
+        }
+      }
+      
+      // Set new target and update HUD
+      setRandomTargetY();
+      updateHUD();
+    }
+
+    // ===============================
+    // CAMERA FOLLOW: keep sub inside safe-zone
+    // ===============================
+    function keepSubInSafeZone() {
+      const vw = viewportWidthMeters(state);
+      const vh = viewportHeightMeters(state);
+      const marginX = vw * SAFE_ZONE_FRACTION;
+      const marginY = vh * SAFE_ZONE_FRACTION;
+
+      const safeLeft = state.camera.topLeft.x + marginX;
+      const safeRight = state.camera.bottomRight.x - marginX;
+      const safeBottom = state.camera.bottomRight.y + marginY; // smaller y
+      const safeTop = state.camera.topLeft.y - marginY;        // larger y
+
+      let dx = 0;
+      let dy = 0;
+
+      if (state.sub.position.x < safeLeft) {
+        dx = state.sub.position.x - safeLeft; // negative => move camera left
+      } else if (state.sub.position.x > safeRight) {
+        dx = state.sub.position.x - safeRight; // positive => move camera right
+      }
+
+      if (state.sub.position.y < safeBottom) {
+        // too close to bottom, move camera down (decrease both top and bottom y)
+        dy = state.sub.position.y - safeBottom;
+      } else if (state.sub.position.y > safeTop) {
+        // too close to top, move camera up (increase both top and bottom y)
+        dy = state.sub.position.y - safeTop;
+      }
+
+      if (dx !== 0) {
+        state.camera.topLeft.x += dx;
+        state.camera.bottomRight.x += dx;
+      }
+      if (dy !== 0) {
+        state.camera.topLeft.y += dy;
+        state.camera.bottomRight.y += dy;
+      }
+    }
+
+    // ===============================
+    // ENTITY SPAWNING & UPDATE (meters)
+    // ===============================
+    function maybeSpawnCoinOffscreenRight() {
+      if (state.world.coins.length > 0) return;
+      // Spawn only when at exact target depth (integers by design here)
+      if (Math.round(state.sub.position.y) !== state.goals.targetY) return;
+
+      const spawnX = state.camera.bottomRight.x + COIN_SPAWN_OFFSET_METERS;
+      const spawnY = state.goals.targetY;
+      const coinType = VARIANT_COIN_MAP[state.ui.gameState.variant] || COIN_TYPES.BASIC;
+      state.world.coins.push({
+        position: { x: spawnX, y: spawnY },
+        radius: COIN_RADIUS_METERS,
+        velocity: { x: -COIN_SPEED_MPS, y: 0 },
+        collected: false,
+        type: coinType,
+      });
+    }
+
+    function updateCoins(dtSeconds) {
+      const leftCullX = state.camera.topLeft.x - COIN_CULL_MARGIN_METERS;
+
+      const subLeft = state.sub.position.x - state.sub.width / 2 - SUB_COLLISION_GROWTH_METERS;
+      const subRight = state.sub.position.x + state.sub.width / 2 + SUB_COLLISION_GROWTH_METERS;
+      const subBottom = state.sub.position.y - state.sub.height / 2 - SUB_COLLISION_GROWTH_METERS;
+      const subTop = state.sub.position.y + state.sub.height / 2 + SUB_COLLISION_GROWTH_METERS;
+
+      for (const coin of state.world.coins) {
+        // Move coin purely in meters
+        coin.position.x += coin.velocity.x * dtSeconds;
+        coin.position.y += coin.velocity.y * dtSeconds;
+
+        // Collect if coin center intersects inflated sub rectangle
+        if (
+          coin.position.x >= subLeft - coin.radius &&
+          coin.position.x <= subRight + coin.radius &&
+          coin.position.y >= subBottom - coin.radius &&
+          coin.position.y <= subTop + coin.radius &&
+          !coin.collected
+        ) {
+          coin.collected = true;
+          state.goals.score += 50;
+          state.goals.coinsCollected += 1;
+          
+          // Track question attempt for GameUtils
+          trackCoinCollection();
+          // Variant progression
+          if (state.ui.gameState.variant === 'v1' && state.goals.coinsCollected >= VARIANT1_COINS_TARGET) {
+            switchToVariant2();
+          } else if (state.ui.gameState.variant === 'v2' && state.goals.coinsCollected >= VARIANT2_COINS_TARGET) {
+            switchToVariant3();
+          } else if (state.ui.gameState.variant === 'v3') {
+            handleV3LevelProgression();
+          } else {
+            // Set new target and update HUD to show it
+            setRandomTargetY();
+            updateHUD();
+          }
+        }
+      }
+
+      // Remove collected or far-left coins
+      state.world.coins = state.world.coins.filter(c => !c.collected && c.position.x > leftCullX);
+    }
+
+    function spawnBackgroundAnimations(dtSeconds) {
+      // Spawn bubbles in underwater areas
+      if (Math.random() < BUBBLE_SPAWN_RATE * dtSeconds) {
+        const spawnX = state.camera.bottomRight.x + 5; // Off-screen right
+        const maxBubbleY = Math.min(MAX_BUBBLE_HEIGHT, state.camera.bottomRight.y);
+        const spawnY = Math.random() * (maxBubbleY - state.camera.bottomRight.y) + state.camera.bottomRight.y;
+        // Only spawn bubbles below the max bubble height
+        if (spawnY <= MAX_BUBBLE_HEIGHT) {
+          const speed = BUBBLE_SPEED_RANGE[0] + Math.random() * (BUBBLE_SPEED_RANGE[1] - BUBBLE_SPEED_RANGE[0]);
+          const size = BUBBLE_SIZE_RANGE[0] + Math.random() * (BUBBLE_SIZE_RANGE[1] - BUBBLE_SIZE_RANGE[0]);
+          state.world.bubbles.push({
+            position: { x: spawnX, y: spawnY },
+            radius: size,
+            velocity: { x: -speed * 0.8, y: speed * 0.2 }, // Mostly horizontal, slightly upward
+            type: 'underwater'
+          });
+        }
+      }
+
+      // Spawn clouds in sky areas
+      if (Math.random() < CLOUD_SPAWN_RATE * dtSeconds) {
+        const spawnX = state.camera.bottomRight.x + 8; // Off-screen right
+        const minCloudY = Math.max(MIN_CLOUD_HEIGHT, state.camera.bottomRight.y);
+        const spawnY = Math.random() * (state.camera.topLeft.y - minCloudY) + minCloudY;
+        // Only spawn clouds above the min cloud height
+        if (spawnY >= MIN_CLOUD_HEIGHT) {
+          const speed = CLOUD_SPEED_RANGE[0] + Math.random() * (CLOUD_SPEED_RANGE[1] - CLOUD_SPEED_RANGE[0]);
+          const size = CLOUD_SIZE_RANGE[0] + Math.random() * (CLOUD_SIZE_RANGE[1] - CLOUD_SIZE_RANGE[0]);
+          state.world.clouds.push({
+            position: { x: spawnX, y: spawnY },
+            radius: size,
+            velocity: { x: -speed, y: 0 }
+          });
+        }
+      }
+    }
+
+    function updateBackgroundAnimations(dtSeconds) {
+      const leftCullX = state.camera.topLeft.x - 10;
+
+      // Update bubbles with height constraint
+      for (const bubble of state.world.bubbles) {
+        bubble.position.x += bubble.velocity.x * dtSeconds;
+        bubble.position.y += bubble.velocity.y * dtSeconds;
+        // Enforce max bubble height - if it goes too high, clamp it
+        if (bubble.position.y > MAX_BUBBLE_HEIGHT) {
+          bubble.position.y = MAX_BUBBLE_HEIGHT;
+          bubble.velocity.y = Math.min(0, bubble.velocity.y); // Stop or reverse upward movement
+        }
+      }
+
+      // Update clouds with height constraint
+      for (const cloud of state.world.clouds) {
+        cloud.position.x += cloud.velocity.x * dtSeconds;
+        cloud.position.y += cloud.velocity.y * dtSeconds;
+        // Enforce min cloud height - if it goes too low, clamp it
+        if (cloud.position.y < MIN_CLOUD_HEIGHT) {
+          cloud.position.y = MIN_CLOUD_HEIGHT;
+          cloud.velocity.y = Math.max(0, cloud.velocity.y); // Stop or reverse downward movement
+        }
+      }
+
+      // Remove off-screen bubbles and clouds
+      state.world.bubbles = state.world.bubbles.filter(b => b.position.x > leftCullX);
+      state.world.clouds = state.world.clouds.filter(c => c.position.x > leftCullX);
+    }
+
+    // ===============================
+    // INPUT (discrete step in meters)
+    // ===============================
+    function clampSubToVariantBounds() {
+      if (state.sub.position.y < state.bounds.minY) state.sub.position.y = state.bounds.minY;
+      if (state.sub.position.y > state.bounds.maxY) state.sub.position.y = state.bounds.maxY;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const code = e.code;
+      const isArrow = code === 'ArrowUp' || code === 'ArrowDown' || code === 'ArrowLeft' || code === 'ArrowRight';
+      const isWASD = code === 'KeyW' || code === 'KeyS' || code === 'KeyA' || code === 'KeyD';
+      if (isArrow || isWASD) e.preventDefault();
+      if (!state.ui.started) return;
+      
+      // Variant 3: Handle multiple choice input, disable movement
+      if (state.ui.gameState.variant === 'v3') {
+        if (state.ui.showingChoices && (code === 'Digit1' || code === 'Digit2' || code === 'Digit3')) {
+          const choiceIndex = parseInt(code.slice(-1)) - 1;
+          selectChoice(choiceIndex);
+        }
+        return; // Don't process movement keys in variant 3
+      }
+
+      const now = performance.now();
+      const wasY = Math.round(state.sub.position.y);
+
+      if (code === 'ArrowUp' || code === 'KeyW') {
+        state.sub.position.y += INPUT_STEP_METERS;
+        clampSubToVariantBounds();
+        keepSubInSafeZone();
+        maybeSpawnCoinOffscreenRight();
+        updateHUD();
+      } else if (code === 'ArrowDown' || code === 'KeyS') {
+        state.sub.position.y -= INPUT_STEP_METERS;
+        clampSubToVariantBounds();
+        keepSubInSafeZone();
+        maybeSpawnCoinOffscreenRight();
+        updateHUD();
+      } else if (code === 'ArrowLeft' || code === 'KeyA') {
+        state.sub.position.x -= INPUT_STEP_METERS;
+        keepSubInSafeZone();
+        updateHUD();
+      } else if (code === 'ArrowRight' || code === 'KeyD') {
+        state.sub.position.x += INPUT_STEP_METERS;
+        keepSubInSafeZone();
+        updateHUD();
+      }
+
+      // Variant 2+: show movement equation after moving vertically
+      const isVertical = (code === 'ArrowUp' || code === 'KeyW' || code === 'ArrowDown' || code === 'KeyS');
+      if (state.ui.gameState.variant === 'v2' && isVertical) {
+        // Show equation: starting position + needed change = target position
+        const neededChange = state.goals.targetY - state.ui.coinStartY;
+        const fmt = (n) => (n < 0 ? `${n}` : `+${n}`);
+        state.ui.equationFloatText = `${state.ui.coinStartY} + ${fmt(neededChange)} = ${state.goals.targetY}`;
+        state.ui.lastMoveMs = now;
+      }
+    });
+
+    // ===============================
+    // RENDER (meters -> pixels at the very end only)
+    // ===============================
+    function renderBackground() {
+      // Split at world y=0 (sea level)
+      const seaLevelYpx = worldToPixelY(state, 0);
+
+      // Sky
+      const gradSky = ctx.createLinearGradient(0, seaLevelYpx, 0, 0);
+      gradSky.addColorStop(0, COLOR_SKY_HORIZON);
+      gradSky.addColorStop(1, COLOR_SKY_TOP);
+      ctx.fillStyle = gradSky;
+      ctx.fillRect(0, 0, canvas.width, Math.max(0, seaLevelYpx));
+
+      // Sea
+      const gradSea = ctx.createLinearGradient(0, seaLevelYpx, 0, canvas.height);
+      gradSea.addColorStop(0, COLOR_SEA_SURFACE);
+      gradSea.addColorStop(1, COLOR_SEA_DEEP);
+      ctx.fillStyle = gradSea;
+      ctx.fillRect(0, seaLevelYpx, canvas.width, canvas.height - seaLevelYpx);
+
+      // Zero line
+      ctx.strokeStyle = COLOR_ZERO_LINE;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, seaLevelYpx);
+      ctx.lineTo(canvas.width, seaLevelYpx);
+      ctx.stroke();
+    }
+
+    function renderGauge() {
+      // Left bar backing
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 0, GAUGE_WIDTH_PX, canvas.height);
+
+      // Visible world range
+      const yTop = state.camera.topLeft.y;
+      const yBottom = state.camera.bottomRight.y;
+      const majorStart = Math.ceil(yBottom / GAUGE_MAJOR_TICK_M) * GAUGE_MAJOR_TICK_M;
+      const minorStart = Math.ceil(yBottom / GAUGE_MINOR_TICK_M) * GAUGE_MINOR_TICK_M;
+
+      // Minor ticks
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      for (let y = minorStart; y <= yTop; y += GAUGE_MINOR_TICK_M) {
+        const py = worldToPixelY(state, y);
+        ctx.beginPath();
+        ctx.moveTo(GAUGE_WIDTH_PX - 12, py);
+        ctx.lineTo(GAUGE_WIDTH_PX - 2, py);
+        ctx.stroke();
+      }
+
+      // Major ticks + labels
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillStyle = COLOR_GAUGE_TEXT;
+      ctx.font = '12px system-ui, sans-serif';
+      for (let y = majorStart; y <= yTop; y += GAUGE_MAJOR_TICK_M) {
+        const py = worldToPixelY(state, y);
+        ctx.beginPath();
+        ctx.moveTo(GAUGE_WIDTH_PX - 18, py);
+        ctx.lineTo(GAUGE_WIDTH_PX - 2, py);
+        ctx.stroke();
+        ctx.fillText(`${y}m`, 6, py - 2);
+      }
+
+      // SEA LEVEL label
+      const zeroY = worldToPixelY(state, 0);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px system-ui, sans-serif';
+      ctx.fillText('SEA LEVEL', 6, zeroY - 6);
+
+      // Current position marker (triangle)
+      const currentPy = worldToPixelY(state, state.sub.position.y);
+      ctx.fillStyle = COLOR_CURRENT_MARK;
+    ctx.beginPath();
+      ctx.moveTo(GAUGE_WIDTH_PX - 22, currentPy);
+      ctx.lineTo(GAUGE_WIDTH_PX - 34, currentPy - 6);
+      ctx.lineTo(GAUGE_WIDTH_PX - 34, currentPy + 6);
+      ctx.closePath();
+    ctx.fill();
+
+      // Target position marker (circle)
+      const targetPy = worldToPixelY(state, state.goals.targetY);
+      ctx.strokeStyle = COLOR_TARGET_MARK;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(GAUGE_WIDTH_PX - 10, targetPy, 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function renderSubmarine() {
+      const cx = worldToPixelX(state, state.sub.position.x);
+      const cy = worldToPixelY(state, state.sub.position.y);
+      const w = metersToPixels(state.sub.width);
+      const h = metersToPixels(state.sub.height);
+
+      // Propulsion effects at the back
+      const propulsionX = cx - w * 0.6; // Further back than before
+      if (state.sub.position.y > 0) {
+        // Flames when above water (orange oval)
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
+        ctx.beginPath();
+        ctx.ellipse(propulsionX - w * 0.1, cy, w * 0.2, h * 0.15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Inner flame
+        ctx.fillStyle = 'rgba(255, 69, 0, 0.9)';
+        ctx.beginPath();
+        ctx.ellipse(propulsionX - w * 0.05, cy, w * 0.12, h * 0.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Bubbles when at/below water (multiple small circles)
+        ctx.fillStyle = 'rgba(173, 216, 230, 0.6)';
+        const bubbleTime = performance.now() * 0.001; // Use time for slight animation variation
+        for (let i = 0; i < 5; i++) {
+          const bubbleX = propulsionX - w * 0.05 - (i * w * 0.05);
+          const bubbleY = cy + (Math.sin(bubbleTime + i) * h * 0.1);
+          const bubbleRadius = (2 + i) * 2;
+          ctx.beginPath();
+          ctx.arc(bubbleX, bubbleY, bubbleRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Small gray nozzle trapezoid above the propulsion effects
+      ctx.fillStyle = '#6b7280';
+      ctx.strokeStyle = '#374151';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const nozzleWidth = w * 0.08;
+      const nozzleHeight = h * 0.2;
+      const nozzleX = cx - w * 0.5 - 1.5 * nozzleWidth;
+      ctx.moveTo(nozzleX, cy - nozzleHeight);
+      ctx.lineTo(nozzleX + nozzleWidth, cy - nozzleHeight * 0.3);
+      ctx.lineTo(nozzleX + nozzleWidth, cy + nozzleHeight * 0.3);
+      ctx.lineTo(nozzleX, cy + nozzleHeight);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // Body (oval with cute gradient)
+      const grad = ctx.createLinearGradient(0, cy - h / 2, 0, cy + h / 2);
+      grad.addColorStop(0, COLOR_SUB_GRADIENT_LIGHT);
+      grad.addColorStop(1, COLOR_SUB_GRADIENT_DARK);
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, w * 0.55, h * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Front window
+      ctx.fillStyle = COLOR_SUB_WINDOW;
+      ctx.beginPath();
+      ctx.arc(cx + w * 0.15, cy, h * 0.23, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Tools
+      // Tools - dark gray rounded rectangle
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      const toolWidth = w * 0.3;
+      const toolHeight = h * 0.2;
+      const toolX = cx - w * 0.39;
+      const toolY = cy - toolHeight / 2;
+      const cornerRadius = 3;
+      ctx.beginPath();
+      ctx.roundRect(toolX, toolY, toolWidth, toolHeight, cornerRadius);
+      ctx.fill();
+    }
+
+    function renderCoins() {
+      for (const coin of state.world.coins) {
+        const px = worldToPixelX(state, coin.position.x);
+        const py = worldToPixelY(state, coin.position.y);
+        const r = metersToPixels(coin.radius);
+        
+        renderCoin(px, py, r, coin.type || COIN_TYPES.BASIC);
+      }
+    }
+    
+    function renderCoin(px, py, r, type) {
+      ctx.save();
+      
+      switch (type) {
+        case COIN_TYPES.BASIC:
+          // Simple gold circle
+        ctx.fillStyle = COLOR_COIN_FILL;
+        ctx.strokeStyle = COLOR_COIN_STROKE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+          break;
+          
+        case COIN_TYPES.COOL:
+          // Bigger, shinier coin with inner circle
+          ctx.fillStyle = '#ffef82';
+          ctx.strokeStyle = '#b58900';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(px, py, r * 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // Inner shine
+          ctx.fillStyle = '#fff9c4';
+          ctx.beginPath();
+          ctx.arc(px, py, r * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+          
+        case COIN_TYPES.JEWEL:
+          // Round jewel with gradient
+          const jewelGrad = ctx.createRadialGradient(px - r*0.3, py - r*0.3, 0, px, py, r);
+          jewelGrad.addColorStop(0, '#e11d48');
+          jewelGrad.addColorStop(0.7, '#be123c');
+          jewelGrad.addColorStop(1, '#881337');
+          ctx.fillStyle = jewelGrad;
+          ctx.strokeStyle = '#450a0f';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(px, py, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // Highlight
+          ctx.fillStyle = '#fce7e7';
+          ctx.beginPath();
+          ctx.arc(px - r*0.4, py - r*0.4, r*0.3, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+          
+        case COIN_TYPES.DIAMOND:
+          // Cut diamond shape
+          ctx.fillStyle = '#ddd6fe';
+          ctx.strokeStyle = '#6366f1';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          // Diamond shape using 8 points
+          const angles = [];
+          for (let i = 0; i < 8; i++) {
+            angles.push((i * Math.PI * 2) / 8);
+          }
+          ctx.moveTo(px + Math.cos(angles[0]) * r, py + Math.sin(angles[0]) * r);
+          for (let i = 1; i < 8; i++) {
+            const radius = i % 2 === 0 ? r : r * 0.6;
+            ctx.lineTo(px + Math.cos(angles[i]) * radius, py + Math.sin(angles[i]) * radius);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          // Inner sparkle
+          ctx.fillStyle = '#f0f9ff';
+          ctx.beginPath();
+          ctx.arc(px, py, r * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+          
+        case COIN_TYPES.SMALL_CHEST:
+          // Small treasure chest
+          const chestW = r * 1.5;
+          const chestH = r * 1.2;
+          // Chest body
+          ctx.fillStyle = '#92400e';
+          ctx.strokeStyle = '#451a03';
+          ctx.lineWidth = 2;
+          ctx.fillRect(px - chestW/2, py - chestH/2, chestW, chestH);
+          ctx.strokeRect(px - chestW/2, py - chestH/2, chestW, chestH);
+          // Chest lid
+          ctx.fillStyle = '#a16207';
+          ctx.fillRect(px - chestW/2, py - chestH/2, chestW, chestH * 0.4);
+          ctx.strokeRect(px - chestW/2, py - chestH/2, chestW, chestH * 0.4);
+          // Lock
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(px, py - chestH*0.1, r * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+          
+        case COIN_TYPES.BIG_CHEST:
+          // Large treasure chest
+          const bigChestW = r * 2;
+          const bigChestH = r * 1.6;
+          // Chest body
+          ctx.fillStyle = '#92400e';
+          ctx.strokeStyle = '#451a03';
+          ctx.lineWidth = 3;
+          ctx.fillRect(px - bigChestW/2, py - bigChestH/2, bigChestW, bigChestH);
+          ctx.strokeRect(px - bigChestW/2, py - bigChestH/2, bigChestW, bigChestH);
+          // Chest lid
+          ctx.fillStyle = '#a16207';
+          ctx.fillRect(px - bigChestW/2, py - bigChestH/2, bigChestW, bigChestH * 0.4);
+          ctx.strokeRect(px - bigChestW/2, py - bigChestH/2, bigChestW, bigChestH * 0.4);
+          // Multiple gold decorations
+          ctx.fillStyle = '#fbbf24';
+          // Left decoration
+          ctx.fillRect(px - bigChestW*0.3, py - bigChestH*0.1, bigChestW*0.1, bigChestH*0.6);
+          // Right decoration
+          ctx.fillRect(px + bigChestW*0.2, py - bigChestH*0.1, bigChestW*0.1, bigChestH*0.6);
+          // Center lock
+          ctx.beginPath();
+          ctx.arc(px, py - bigChestH*0.05, r * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+      }
+      
+      ctx.restore();
+    }
+
+    function renderBackgroundAnimations() {
+      // Render clouds in sky - solid white, no transparency
+      ctx.fillStyle = '#ffffff';
+      for (const cloud of state.world.clouds) {
+        const px = worldToPixelX(state, cloud.position.x);
+        const py = worldToPixelY(state, cloud.position.y);
+        const r = metersToPixels(cloud.radius);
+        
+        // Draw cloud as multiple overlapping circles
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px - r * 0.6, py, r * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px + r * 0.6, py, r * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px, py - r * 0.5, r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Render bubbles underwater
+      ctx.fillStyle = 'rgba(173, 216, 230, 0.4)';
+      ctx.strokeStyle = 'rgba(135, 206, 235, 0.6)';
+      ctx.lineWidth = 1;
+      for (const bubble of state.world.bubbles) {
+        const px = worldToPixelX(state, bubble.position.x);
+        const py = worldToPixelY(state, bubble.position.y);
+        const r = metersToPixels(bubble.radius);
+        
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    function renderFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      renderBackground();
+      renderBackgroundAnimations(); // Render before other entities
+      renderGauge();
+      renderCoins();
+      renderSubmarine();
+    }
+
+    function updateHUD() {
+      const curY = Math.round(state.sub.position.y);
+      const tgtY = state.goals.targetY;
+      document.getElementById('hudCurrent').textContent = `Current: ${curY}m`;
+      document.getElementById('hudTarget').textContent = `Target: ${tgtY}m`;
+      const left = Math.max(0, state.goals.coinsTarget - state.goals.coinsCollected);
+      document.getElementById('hudCoinsCollected').textContent = `Coins Collected: ${state.goals.coinsCollected}`;
+      document.getElementById('hudCoinsLeft').textContent = `Coins Left: ${left}`;
+      const dirEl = document.getElementById('direction');
+      if (curY < tgtY) dirEl.textContent = '↑';
+      else if (curY > tgtY) dirEl.textContent = '↓';
+      else dirEl.textContent = '✓';
+      
+      // Variant 3: Show multiple choice panel when showing choices
+      const choicePanel = document.getElementById('choicePanel');
+      if (state.ui.gameState.variant === 'v3' && state.ui.showingChoices) {
+        choicePanel.style.display = 'block';
+        const fmt = (n) => (n < 0 ? `${n}` : `+${n}`);
+        const neededChange = state.goals.targetY - state.ui.coinStartY;
+        document.getElementById('currentPosition').textContent = `${state.ui.coinStartY}m`;
+        document.getElementById('targetPosition').textContent = `${state.goals.targetY}m`;
+        
+        const getArrow = (val) => val >= 0 ? '↑' : '↓';
+        document.getElementById('choice0').textContent = `${fmt(state.ui.choices[0])}m ${getArrow(state.ui.choices[0])}`;
+        document.getElementById('choice1').textContent = `${fmt(state.ui.choices[1])}m ${getArrow(state.ui.choices[1])}`;
+        document.getElementById('choice2').textContent = `${fmt(state.ui.choices[2])}m ${getArrow(state.ui.choices[2])}`;
+        
+        // Render choice states based on game state
+        renderChoiceStates();
+      } else if (state.ui.gameState.variant === 'v3') {
+        choicePanel.style.display = 'none';
+      }
+      
+      // Update movement bubble position if it's visible
+      if (state.ui.isMoving) {
+        updateMovementBubblePosition();
+      }
+    }
+
+    // ===============================
+    // MAIN LOOP (only coin motion uses dt)
+    // ===============================
+    function frame(nowMs) {
+      const dt = (nowMs - state.time.lastFrameMs) / 1000;
+      state.time.lastFrameMs = nowMs;
+
+      updateCoins(dt);
+      spawnBackgroundAnimations(dt);
+      updateBackgroundAnimations(dt);
+      renderFrame();
+      // HUD updates are now event-driven, not every frame
+      requestAnimationFrame(frame);
+    }
+
+    function initVariant1() {
+      state.ui.gameState = { variant: 'v2' };
+      state.bounds.minY = VARIANT1_MIN_Y_METERS;
+      state.bounds.maxY = VARIANT1_MAX_Y_METERS;
+      state.goals.coinsTarget = VARIANT1_COINS_TARGET;
+      state.goals.coinsCollected = 0;
+      state.world.coins = [];
+      state.world.bubbles = [];
+      state.world.clouds = [];
+      state.ui.showingChoices = false;
+      state.ui.isMoving = false;
+      state.ui.equationFloatText = '';
+      clampSubToVariantBounds();
+      setRandomTargetY();
+      updateHUD();
+      
+      showVariantOverlay(
+        'Level 1',
+        // '#0ea5e9', // sky blue - flying high
+        'white',
+        'Navigate using positive numbers in sky',
+        `Collect ${VARIANT1_COINS_TARGET} coins at different altitudes`,
+        'Use ↑/↓ arrows to move, higher numbers = higher altitude'
+      );
+    }
+
+    function initVariant2() {
+      state.ui.gameState = { variant: 'v2' };
+      state.bounds.minY = VARIANT2_MIN_Y_METERS;
+      state.bounds.maxY = VARIANT2_MAX_Y_METERS;
+      state.goals.coinsTarget = VARIANT2_COINS_TARGET;
+      state.goals.coinsCollected = 0;
+      state.world.coins = [];
+      state.world.bubbles = [];
+      state.world.clouds = [];
+      state.ui.showingChoices = false;
+      state.ui.isMoving = false;
+      state.ui.equationFloatText = '';
+      clampSubToVariantBounds();
+      setRandomTargetY();
+      updateHUD();
+      
+      showVariantOverlay(
+        'Level 2', 
+        // '#0284c7', // ocean blue - sea level
+        'white',
+        'Explore positive and negative numbers',
+        `Collect ${VARIANT2_COINS_TARGET} coins above and below sea level`,
+        'Now you can go underwater! Use ↑/↓ arrows to move'
+      );
+    }
+
+    function initVariant3() {
+      // If gameState doesn't have variant and level, set defaults
+      if (!state.ui.gameState || state.ui.gameState.variant !== 'v3') {
+        state.ui.gameState = { variant: 'v3', level: 1 };
+      }
+      
+      // Ensure level is set (default to 1 if not specified)
+      if (!state.ui.gameState.level) {
+        state.ui.gameState.level = 1;
+      }
+      
+      const level = state.ui.gameState.level;
+      const levelNumber = level + 2; // Display level 3-6
+      
+      // Common initialization
+      state.bounds.minY = VARIANT3_MIN_Y_METERS;
+      state.bounds.maxY = VARIANT3_MAX_Y_METERS;
+      state.goals.coinsTarget = V3_COINS_PER_LEVEL;
+      state.goals.coinsCollected = 0; // Reset coins for each level
+      state.world.coins = [];
+      state.world.bubbles = [];
+      state.world.clouds = [];
+      state.ui.showingChoices = false;
+      state.ui.isMoving = false;
+      state.ui.equationFloatText = '';
+      state.ui.choices = [];
+      state.ui.correctChoice = 0;
+      state.ui.movementProgress = 0;
+      state.ui.totalMovementDistance = 0;
+      state.ui.processingChoice = false;
+      state.ui.choiceStates = ['normal', 'normal', 'normal'];
+      
+      // Ensure submarine starts at appropriate position for level
+      const currentY = Math.round(state.sub.position.y);
+      if (level === 1 || level === 2) {
+        // Levels 1 & 2: positive and round
+        if (currentY <= 0 || currentY % 5 !== 0) {
+          state.sub.position.y = 15;
+        }
+      } else if (level === 3) {
+        // Level 3: round (can be negative)
+        if (currentY % 5 !== 0) {
+          state.sub.position.y = Math.round(currentY / 5) * 5;
+        }
+      }
+      // Level 4: any position is fine
+      
+      clampSubToVariantBounds();
+      setRandomTargetY();
+      updateHUD();
+      
+      // Show appropriate overlay for each level
+      if (level === 1) {
+        showVariantOverlay(
+          'Level 3',
+          'white',
+          'Practice algebra with positive round values',
+          'Collect 3 coins using equation-solving skills',
+          'Select the movement that gets you to the target!'
+        );
+      } else if (level === 2) {
+        showVariantOverlay(
+          'Level 4',
+          'white',
+          'Add negative movements while staying airborne',
+          'Collect 3 coins using up and down movements',
+          'Now you can move down, but stay above sea level!'
+        );
+      } else if (level === 3) {
+        showVariantOverlay(
+          'Level 5',
+          'white',
+          'Cross the surface between sky and sea',
+          'Collect 3 coins above and below the water line',
+          'Your submarine can now dive underwater!'
+        );
+      } else if (level === 4) {
+        showVariantOverlay(
+          'Level 6',
+          'white',
+          'Master advanced navigation with precise values',
+          'Collect 3 coins with pinpoint accuracy',
+          'Use any number to reach your exact destination!'
+        );
+      }
+    }
+
+    function showVariantOverlay(title, titleColor, learningFocus, mission, howToPlay) {
+      const startScreen = document.getElementById('startScreen');
+      
+      document.getElementById('startTitle').textContent = title;
+      document.getElementById('startTitle').style.color = titleColor;
+      
+      let sectionsHTML = '';
+      
+      sectionsHTML += `
+      <div class="info-section how-to">
+        <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #be185d;">How to Play</div>
+          <div style="font-size: 14px;">${howToPlay}</div>
+        </div>
+        <div class="info-section mission">
+          <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #581c87;">Mission</div>
+          <div style="font-size: 14px;">${mission}</div>
+          </div>
+        <div class="info-section learning">
+          <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #166534;">Learning Focus</div>
+          <div style="font-size: 14px;">${learningFocus}</div>
+        </div>
+      `;
+      
+      document.getElementById('startBullets').innerHTML = sectionsHTML;
+      
+      startScreen.style.display = 'flex';
+      state.ui.started = false;
+    }
+
+    function switchToVariant2() {
+      initVariant2();
+    }
+
+    function switchToVariant3() {
+      initVariant3();
+    }
+
+    function moveSubmarineToTarget() {
+      console.log(`[MOVEMENT] moveSubmarineToTarget called`);
+      console.log(`[MOVEMENT] isMoving: ${state.ui.isMoving}, currentY: ${Math.round(state.sub.position.y)}, targetY: ${state.goals.targetY}`);
+      
+      // Guard: Prevent multiple movements from running simultaneously
+      if (state.ui.isMoving) {
+        console.log(`[MOVEMENT] Rejected - already moving`);
+        return;
+      }
+      
+      const startY = Math.round(state.sub.position.y);
+      const targetY = state.goals.targetY;
+      const distance = Math.abs(targetY - startY);
+      
+      if (distance === 0) {
+        // Already at target, spawn coin immediately
+        maybeSpawnCoinOffscreenRight();
+        return;
+      }
+      
+      const direction = targetY > startY ? 1 : -1; // 1 for up, -1 for down
+      const stepDelayMs = 1000 / MAX_SPEED_MPS; // Time between each 1-meter step
+      let currentStep = 0;
+      
+      // Initialize movement tracking
+      state.ui.movementProgress = 0;
+      state.ui.totalMovementDistance = distance;
+      state.ui.isMoving = true;
+      showMovementBubble();
+      
+      function stepMove() {
+        // Safety check: ensure we're still supposed to be moving
+        if (!state.ui.isMoving) {
+          return;
+        }
+        
+        if (currentStep >= distance) {
+          // Movement complete
+          state.ui.isMoving = false;
+          hideMovementBubble();
+          maybeSpawnCoinOffscreenRight();
+          return;
+        }
+        
+        // Move one step in Y direction
+        state.sub.position.y += direction * INPUT_STEP_METERS;
+        clampSubToVariantBounds();
+        
+        // Variant 3: Also adjust X position toward center right
+        if (state.ui.gameState.variant === 'v3') {
+          const viewWidthMeters = viewportWidthMeters(state);
+          const targetX = state.camera.topLeft.x + (viewWidthMeters * VARIANT3_SUB_TARGET_X_OFFSET_METERS);
+          const currentX = state.sub.position.x;
+          const xDiff = targetX - currentX;
+          
+          // Move submarine X position 1 meter at a time toward target
+          if (Math.abs(xDiff) > INPUT_STEP_METERS) {
+            const xDirection = xDiff > 0 ? 1 : -1;
+            state.sub.position.x += xDirection * INPUT_STEP_METERS;
+          } else if (Math.abs(xDiff) > 0) {
+            // Close enough - snap to target
+            state.sub.position.x = targetX;
+          }
+        }
+        
+        keepSubInSafeZone();
+        
+        currentStep++;
+        state.ui.movementProgress = currentStep * direction;
+        updateMovementBubble();
+        updateHUD();
+        
+        setTimeout(stepMove, stepDelayMs);
+      }
+      
+      // Start the step-by-step movement
+      stepMove();
+    }
+
+    function selectChoice(index) {
+      console.log(`[CLICK] selectChoice called with index: ${index}`);
+      console.log(`[STATE] variant: ${state.ui.gameState.variant}, showingChoices: ${state.ui.showingChoices}, processingChoice: ${state.ui.processingChoice}`);
+      console.log(`[STATE] choiceStates: [${state.ui.choiceStates.join(', ')}]`);
+      
+      // Check CSS classes on choices for debugging
+      const choices = document.querySelectorAll('#choicePanel .choice');
+      choices.forEach((choice, i) => {
+        console.log(`[CSS] Choice ${i} classes: ${choice.className}`);
+      });
+      
+      // Guard: Only process if we're in the right state and not already processing
+      if (state.ui.gameState.variant !== 'v3' || !state.ui.showingChoices || state.ui.processingChoice) {
+        console.log(`[GUARD] Rejected - variant: ${state.ui.gameState.variant}, showingChoices: ${state.ui.showingChoices}, processingChoice: ${state.ui.processingChoice}`);
+        return;
+      }
+      
+      // Check if this specific choice is already dimmed
+      if (state.ui.choiceStates[index] === 'dimmed') {
+        console.log(`[GUARD] Rejected - choice ${index} is dimmed (${state.ui.choiceStates[index]})`);
+        return;
+      }
+      
+      console.log(`[PROCESSING] Starting to process choice ${index}`);
+      
+      // Prevent multiple simultaneous choices
+      state.ui.processingChoice = true;
+      
+      // Increment attempt counter for this question
+      state.ui.currentQuestionAttempts++;
+      
+      const chosenValue = state.ui.choices[index];
+      console.log(`[CHOICE] Chosen value: ${chosenValue}, correct value: ${state.ui.correctChoice}`);
+      
+      if (chosenValue === state.ui.correctChoice) {
+        console.log(`[CORRECT] Choice ${index} is correct, setting state to 'correct'`);
+        // Correct choice - update state and render immediately
+        state.ui.choiceStates[index] = 'correct';
+        renderChoiceStates();
+        
+        // After feedback time, hide choices and move submarine
+        setTimeout(() => {
+          console.log(`[CORRECT] Timeout finished, hiding choices and starting movement`);
+          state.ui.showingChoices = false;
+          state.ui.processingChoice = false;
+          // Reset choice states for next question
+          state.ui.choiceStates = ['normal', 'normal', 'normal'];
+          updateHUD();
+          moveSubmarineToTarget();
+        }, 400);
+      } else {
+        console.log(`[INCORRECT] Choice ${index} is incorrect, setting state to 'incorrect'`);
+        // Wrong choice - show feedback then dim
+        state.ui.choiceStates[index] = 'incorrect';
+        renderChoiceStates();
+        
+        setTimeout(() => {
+          console.log(`[INCORRECT] Timeout finished, dimming choice ${index}`);
+          // Only update if we're still in the same choice session
+          if (state.ui.showingChoices && state.ui.processingChoice) {
+            state.ui.choiceStates[index] = 'dimmed';
+            state.ui.processingChoice = false;
+            renderChoiceStates();
+            console.log(`[INCORRECT] Choice ${index} dimmed, processingChoice reset to false`);
+          } else {
+            console.log(`[INCORRECT] Session changed, not dimming - showingChoices: ${state.ui.showingChoices}, processingChoice: ${state.ui.processingChoice}`);
+          }
+        }, 400);
+      }
+    }
+
+    function resetChoiceStyles() {
+      const choices = document.querySelectorAll('#choicePanel .choice');
+      choices.forEach(choice => {
+        choice.classList.remove('correct', 'incorrect', 'dimmed');
+      });
+    }
+    
+    function renderChoiceStates() {
+      // Update choice visual states based on game state
+      console.log(`[RENDER] renderChoiceStates called, choiceStates: [${state.ui.choiceStates.join(', ')}]`);
+      const choices = document.querySelectorAll('#choicePanel .choice');
+      choices.forEach((choice, index) => {
+        // Remove all state classes first
+        choice.classList.remove('correct', 'incorrect', 'dimmed');
+        
+        // Add the current state class
+        const currentState = state.ui.choiceStates[index];
+        if (currentState !== 'normal') {
+          choice.classList.add(currentState);
+          console.log(`[RENDER] Applied class '${currentState}' to choice ${index}`);
+        }
+      });
+    }
+
+    function showMovementBubble() {
+      const bubble = document.getElementById('movementBubble');
+      bubble.style.visibility = 'visible';
+      updateMovementBubblePosition();
+    }
+
+    function hideMovementBubble() {
+      const bubble = document.getElementById('movementBubble');
+      bubble.style.visibility = 'hidden';
+    }
+
+    function updateMovementBubble() {
+      const bubble = document.getElementById('movementBubble');
+      
+      const progress = state.ui.movementProgress;
+      const totalDistance = state.ui.totalMovementDistance;
+      const sign = progress >= 0 ? '+' : '';
+      bubble.textContent = `Moved ${sign}${progress}m`;
+      
+      // Calculate progress percentage for the progress bar
+      let progressPercent = 0;
+      if (totalDistance > 0) {
+        progressPercent = Math.abs(progress) / totalDistance * 100;
+        progressPercent = Math.min(100, Math.max(0, progressPercent)); // Clamp between 0-100
+      }
+      
+      // Update the progress bar width
+      bubble.style.setProperty('--progress', `${progressPercent}%`);
+      
+      updateMovementBubblePosition();
+    }
+
+    function updateMovementBubblePosition() {
+      const bubble = document.getElementById('movementBubble');
+      const subPx = worldToPixelX(state, state.sub.position.x);
+      const subPy = worldToPixelY(state, state.sub.position.y);
+      
+      // Position bubble above and slightly right of submarine
+      bubble.style.left = `${subPx + 40}px`;
+      bubble.style.top = `${subPy - 40}px`;
+    }
+
+    function showCompletionScreen() {
+      const completionScreen = document.getElementById('completionScreen');
+      const choicePanel = document.getElementById('choicePanel');
+      
+      // Hide the choice panel if it's showing
+      choicePanel.style.display = 'none';
+      state.ui.showingChoices = false;
+      
+      // Show completion screen
+      completionScreen.style.display = 'flex';
+    }
+
+    function hideCompletionScreen() {
+      const completionScreen = document.getElementById('completionScreen');
+      completionScreen.style.display = 'none';
+    }
+
+    // ===============================
+    // INIT
+    // ===============================
+    (function init() {
+      // Bare minimum setup - no variant-specific logic here!
+      initializeCamera();
+      try { if (window.GameUtils) { GameUtils.initializeStats('fly-and-dive'); GameUtils.setupCloseDetection(); } } catch (e) {}
+      
+      // Set up start button handler
+      document.getElementById('startBtn').addEventListener('click', () => {
+        state.ui.started = true;
+        document.getElementById('startScreen').style.display = 'none';
+        
+        // If we're in variant 3 and choices are ready, show them now
+        if (state.ui.gameState.variant === 'v3' && state.ui.choices.length > 0) {
+          state.ui.showingChoices = true;
+        }
+        
+        updateHUD();
+      });
+
+      // Set up completion screen button handlers
+      document.getElementById('keepPlayingBtn').addEventListener('click', () => {
+        hideCompletionScreen();
+        // Continue playing - reset for additional coins
+        state.goals.coinsTarget = state.goals.coinsCollected + VARIANT3_KEEP_PLAYING_BONUS;
+        setRandomTargetY();
+        updateHUD();
+      });
+
+
+      
+      // Start render loop
+      requestAnimationFrame((t) => { state.time.lastFrameMs = t; requestAnimationFrame(frame); });
+      
+      // Initialize the variant that's set in the initial STATE
+      const initialVariant = state.ui.gameState.variant;
+      if (initialVariant === 'v3') {
+        initVariant3();
+      } else if (initialVariant === 'v2') {
+        initVariant2();
+      } else {
+        initVariant1();
+      }
+    })();
+</script>
+</body>
+</html>

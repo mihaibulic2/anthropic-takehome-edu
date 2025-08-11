@@ -2,19 +2,28 @@
   "games": [
     {
       "id": "3d-space",
+      "specType": "questions",
       "description": "Third-person space flight game where the player pilots a spaceship, avoids asteroids, and hits gates to trigger 4-option multiple-choice questions. Game mechanics suitable for ages 8+, requires 3D navigation skills."
     },
     {
       "id": "line-rider-dino",
+      "specType": "questions",
       "description": "Side-scrolling platformer where the player moves a dinosaur, jumps across gaps, and hits gates to trigger 4-option multiple-choice questions. Game mechanics suitable for ages 6+, requires basic timing and movement skills."
     },
     {
       "id": "line-rider-fairy",
+      "specType": "questions",
       "description": "Side-scrolling platformer like line-rider-dino but with a colorful fairy character in a fantasy world. Game mechanics suitable for ages 6+, requires basic timing and movement skills. Works only with multiple-choice question format."
     },
     {
       "id": "matcher-spooky",
+      "specType": "questions",
       "description": "Spooky, ghost-themed matching game where player pairs items from the left column with related items on the right. Each round presents a new set of themed pairs. Game mechanics suitable for ages 7+, requires reading comprehension and logical association skills."
+    },
+    {
+      "id": "fly-and-dive",
+      "specType": "state",
+      "description": "Game for 4th-6th graders to practice some math concepts. Requires some basic reading comprehension. Variant 1: Vertical number line basics with positive numbers only, position identification and directional movement. Variant 2: Negative numbers and operations across zero, addition/subtraction with integers above and below sea level. Variant 3: Algebraic equations with unknowns, solving for missing values in position-based problems (this has 4 levels: level 1: round positive numbers only, level 2: negative numbers and operations across zero, level 3: algebraic equations with unknowns, level 4: non-round numbers -- other variants have no level). When choosing this game, use the alternate style (state: { variant: 'v1' | 'v2' | 'v3', level: undefined | 1 | 2 | 3 | 4 })"
     }
   ]
- }
+}

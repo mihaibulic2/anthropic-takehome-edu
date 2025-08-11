@@ -62,6 +62,46 @@ export function GamePopup({ gameProps, onClose }: Props) {
             }, '*');
           }
         }
+      } else if (event.data.type === 'GENERIC_LLM_REQUEST') {
+        const { requestId, prompt } = event.data;
+        
+        try {
+          const response = await fetch('/api/fetch-llm-response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt,
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          // Send questions back to the iframe
+          const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
+          if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'GENERIC_LLM_RESPONSE',
+              requestId,
+              response: data.response || ""
+            }, '*');
+          }
+        } catch (error) {
+          console.error('Failed to get LLM response:', error);
+          
+          // Send error back to the iframe
+          const iframe = document.querySelector('iframe[title*="Game"]') as HTMLIFrameElement;
+          if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'GENERIC_LLM_RESPONSE_ERROR',
+              requestId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }, '*');
+          }
+        }
       }
     };
 
