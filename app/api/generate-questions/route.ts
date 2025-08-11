@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { myProvider } from '@/lib/ai/providers';
-import { GameProps } from '@/lib/types';
+import type { GameProps } from '@/lib/types';
 
 // Multiple choice question schema
 const multipleChoiceQuestionSchema = z.object({
@@ -96,6 +96,7 @@ ${requiredQuestions}
 ## OUTPUT FORMAT
 - Respond only with valid JSON, nothing else
 - Your questions must be in a "questions" array: { "questions": [ ... ] }
+- DO NOT MAKE THE FIRST ANSWER THE CORRECT ANSWER!!!
 - Question format: ${formatSpec}
 - Include exactly ${count || 10} questions in your response`,
     });

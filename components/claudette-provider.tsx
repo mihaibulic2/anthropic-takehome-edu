@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { GamePopup } from './game-popup';
 import { AnimatePresence } from 'framer-motion';
-import { GameProps } from '@/lib/types';
+import type { GameProps } from '@/lib/types';
 
 interface ContextType {
   showGamePopup: (gameData: GameProps) => void;
