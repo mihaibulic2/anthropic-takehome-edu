@@ -36,7 +36,7 @@
   #endStats div { margin: 8px 0; }
   #continueBtn {
     padding: 16px 32px; font-size: 20px; background: linear-gradient(135deg, #ff69b4, #ff1493);
-    color: #fff; border: none; border-radius: 24px; cursor: pointer;
+    color: #fff; border: none; border-radius: 99px; cursor: pointer;
     font-weight: bold; transition: all 0.3s; margin-top: 20px;
     box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
   }
@@ -1182,6 +1182,7 @@ Consider user performance in question history to adjust difficulty appropriately
     
     // Reset lives but keep score and checkpoints
     lives = 3;
+
     // Reset player position to current spawn point
     player.x = player.spawnX;
     player.y = player.spawnY;
@@ -1192,9 +1193,12 @@ Consider user performance in question history to adjust difficulty appropriately
     asking = false;
     promptEl.style.display = 'none';
     
-    // Hide end screen and restart game
+    // Hide end screen
     document.getElementById('endScreen').style.display = 'none';
+
+    // Restart the game
     gameStarted = true;
+    requestAnimationFrame(loop);
   }
 
   /* ---------- Initialize Game ---------- */

@@ -36,7 +36,7 @@
   #endStats div { margin: 8px 0; }
   #continueBtn {
     padding: 16px 32px; font-size: 20px; background: linear-gradient(135deg, #78d66a, #a7d86b);
-    color: #102418; border: none; border-radius: 24px; cursor: pointer;
+    color: #102418; border: none; border-radius: 99px; cursor: pointer;
     font-weight: bold; transition: all 0.3s; margin-top: 20px;
   }
   #continueBtn:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(120, 214, 106, 0.8); }
@@ -238,65 +238,64 @@
   let world = {
     sections: [],         // spawned sections
     nextX: 0,             // where to attach next section (world x)
-    hazards: [],          // convenience mirrors
     platforms: [],
     gates: [],
   };
 
-  // Section object: { id, tier, x0, width, platforms[], hazards[], gate{...}, parTime }
+  // Section object: { id, tier, x0, width, platforms[], gate{...}, parTime }
   // Prefabs are relative (0..width). We'll provide a few per tier for demo.
 
   const prefabs = {
     VERY_EASY: [
       // wide ledges, tiny gaps, low heights
       { id:"ve1", width: 900, par: 12, platforms:[{x:0,y:520,w:400,h:60},{x:450,y:520,w:450,h:60}],
-        ledges:[{x:220,y:450,w:120,h:20}], hazards:[], gateAt: 420 },
+        ledges:[{x:220,y:450,w:120,h:20}], gateAt: 420 },
       { id:"ve2", width: 920, par: 12, platforms:[{x:0,y:520,w:350,h:60},{x:380,y:520,w:540,h:60}],
-        ledges:[{x:160,y:470,w:100,h:20},{x:580,y:470,w:120,h:20}], hazards:[], gateAt: 360 },
+        ledges:[{x:160,y:470,w:100,h:20},{x:580,y:470,w:120,h:20}], gateAt: 360 },
       { id:"ve3", width: 880, par: 11, platforms:[{x:0,y:520,w:300,h:60},{x:320,y:520,w:560,h:60}],
-        ledges:[{x:520,y:430,w:120,h:20}], hazards:[{x:290,y:540,w:20,h:40}], gateAt: 300 },
+        ledges:[{x:520,y:430,w:120,h:20}], gateAt: 300 },
       { id:"ve4", width: 940, par: 12, platforms:[{x:0,y:520,w:420,h:60},{x:460,y:520,w:480,h:60}],
-        ledges:[], hazards:[], gateAt: 440 },
+        ledges:[], gateAt: 440 },
     ],
     EASY: [
       { id:"e1", width: 1000, par: 13, platforms:[{x:0,y:520,w:420,h:60},{x:520,y:520,w:480,h:60}],
-        ledges:[{x:260,y:440,w:120,h:20},{x:680,y:400,w:120,h:20}], hazards:[{x:460,y:540,w:40,h:40}], gateAt: 500 },
+        ledges:[{x:260,y:440,w:120,h:20},{x:680,y:400,w:120,h:20}], gateAt: 500 },
       { id:"e2", width: 1050, par: 13, platforms:[{x:0,y:520,w:380,h:60},{x:460,y:520,w:560,h:60}],
-        ledges:[{x:160,y:460,w:110,h:20},{x:640,y:430,w:130,h:20}], hazards:[], gateAt: 460 },
+        ledges:[{x:160,y:460,w:110,h:20},{x:640,y:430,w:130,h:20}], gateAt: 460 },
       { id:"e3", width: 980, par: 13, platforms:[{x:0,y:520,w:340,h:60},{x:420,y:520,w:560,h:60}],
-        ledges:[{x:300,y:460,w:110,h:20}], hazards:[{x:360,y:540,w:60,h:40}], gateAt: 420 },
+        ledges:[{x:300,y:460,w:110,h:20}], gateAt: 420 },
       { id:"e4", width: 1040, par: 13, platforms:[{x:0,y:520,w:420,h:60},{x:520,y:520,w:520,h:60}],
-        ledges:[{x:600,y:460,w:120,h:20}], hazards:[], gateAt: 520 },
+        ledges:[{x:600,y:460,w:120,h:20}], gateAt: 520 },
     ],
     MEDIUM: [
       { id:"m1", width: 1100, par: 14, platforms:[{x:0,y:520,w:320,h:60},{x:420,y:520,w:300,h:60},{x:760,y:520,w:340,h:60}],
-        ledges:[{x:560,y:440,w:120,h:20},{x:840,y:380,w:120,h:20}], hazards:[{x:350,y:540,w:60,h:40}], gateAt: 700 },
+        ledges:[{x:560,y:440,w:120,h:20},{x:840,y:380,w:120,h:20}], gateAt: 700 },
       { id:"m2", width: 1120, par: 14, platforms:[{x:0,y:520,w:360,h:60},{x:500,y:520,w:620,h:60}],
-        ledges:[{x:240,y:450,w:110,h:20},{x:760,y:430,w:110,h:20}], hazards:[{x:420,y:540,w:80,h:40}], gateAt: 560 },
+        ledges:[{x:240,y:450,w:110,h:20},{x:760,y:430,w:110,h:20}], gateAt: 560 },
       { id:"m3", width: 1160, par: 14, platforms:[{x:0,y:520,w:380,h:60},{x:480,y:520,w:640,h:60}],
-        ledges:[{x:310,y:440,w:120,h:20},{x:700,y:380,w:120,h:20}], hazards:[{x:420,y:540,w:100,h:40}], gateAt: 600 },
+        ledges:[{x:310,y:440,w:120,h:20},{x:700,y:380,w:120,h:20}], gateAt: 600 },
       { id:"m4", width: 1140, par: 14, platforms:[{x:0,y:520,w:420,h:60},{x:540,y:520,w:600,h:60}],
-        ledges:[{x:600,y:440,w:130,h:20},{x:900,y:390,w:130,h:20}], hazards:[{x:480,y:540,w:80,h:40}], gateAt: 640 },
+        ledges:[{x:600,y:440,w:130,h:20},{x:900,y:390,w:130,h:20}], gateAt: 640 },
     ],
     HARD: [
       { id:"h1", width: 1220, par: 15, platforms:[{x:0,y:520,w:300,h:60},{x:440,y:520,w:280,h:60},{x:800,y:520,w:360,h:60}],
-        ledges:[{x:520,y:430,w:110,h:20},{x:900,y:360,w:110,h:20}], hazards:[{x:320,y:540,w:90,h:40},{x:720,y:540,w:70,h:40}], gateAt: 780 },
+        ledges:[{x:520,y:430,w:110,h:20},{x:900,y:360,w:110,h:20}], gateAt: 780 },
       { id:"h2", width: 1240, par: 15, platforms:[{x:0,y:520,w:340,h:60},{x:520,y:520,w:300,h:60},{x:900,y:520,w:340,h:60}],
-        ledges:[{x:620,y:420,w:110,h:20}], hazards:[{x:380,y:540,w:100,h:40}], gateAt: 900 },
+        ledges:[{x:620,y:420,w:110,h:20}], gateAt: 900 },
       { id:"h3", width: 1260, par: 15, platforms:[{x:0,y:520,w:320,h:60},{x:500,y:520,w:320,h:60},{x:900,y:520,w:360,h:60}],
-        ledges:[{x:680,y:420,w:110,h:20},{x:960,y:360,w:110,h:20}], hazards:[{x:360,y:540,w:100,h:40},{x:780,y:540,w:70,h:40}], gateAt: 920 },
+        ledges:[{x:680,y:420,w:110,h:20},{x:960,y:360,w:110,h:20}], gateAt: 920 },
       { id:"h4", width: 1280, par: 15, platforms:[{x:0,y:520,w:300,h:60},{x:480,y:520,w:320,h:60},{x:900,y:520,w:380,h:60}],
-        ledges:[{x:620,y:410,w:120,h:20}], hazards:[{x:340,y:540,w:110,h:40},{x:740,y:540,w:80,h:40}], gateAt: 940 },
+        ledges:[{x:620,y:410,w:120,h:20}], gateAt: 940 },
     ],
     VERY_HARD: [
       { id:"vh1", width: 1340, par: 16, platforms:[{x:0,y:520,w:300,h:60},{x:520,y:520,w:300,h:60},{x:980,y:520,w:360,h:60}],
-        ledges:[{x:700,y:400,w:110,h:20},{x:1040,y:340,w:110,h:20}], hazards:[{x:340,y:540,w:120,h:40},{x:820,y:540,w:100,h:40}], gateAt: 1000 },
+        ledges:[{x:700,y:400,w:110,h:20},{x:1040,y:340,w:110,h:20}], gateAt: 1000 },
       { id:"vh2", width: 1360, par: 16, platforms:[{x:0,y:520,w:280,h:60},{x:520,y:520,w:300,h:60},{x:960,y:520,w:380,h:60}],
-        ledges:[{x:760,y:390,w:120,h:20}], hazards:[{x:320,y:540,w:120,h:40},{x:740,y:540,w:100,h:40}], gateAt: 980 },
+        ledges:[{x:760,y:390,w:120,h:20}], gateAt: 980 },
       { id:"vh3", width: 1380, par: 16, platforms:[{x:0,y:520,w:300,h:60},{x:540,y:520,w:300,h:60},{x:1000,y:520,w:380,h:60}],
-        ledges:[{x:820,y:380,w:120,h:20},{x:1080,y:330,w:110,h:20}], hazards:[{x:360,y:540,w:120,h:40},{x:760,y:540,w:110,h:40}], gateAt: 1020 },
+        ledges:[{x:820,y:380,w:120,h:20},{x:1080,y:330,w:110,h:20}], gateAt: 1020 },
       { id:"vh4", width: 1400, par: 16, platforms:[{x:0,y:520,w:300,h:60},{x:560,y:520,w:320,h:60},{x:1020,y:520,w:400,h:60}],
-        ledges:[{x:860,y:370,w:120,h:20}], hazards:[{x:340,y:540,w:130,h:40},{x:800,y:540,w:110,h:40}], gateAt: 1060 },
+        ledges:[{x:860,y:370,w:120,h:20}], gateAt: 1060 },
     ],
   };
 
@@ -377,7 +376,6 @@
       x0: attachX,
       width: pf.width,
       platforms: [],
-      hazards: [],
       gate: null,
       parTime: pf.par,
       spawnX: attachX + 60,  // Fixed spawn position for this section
@@ -407,12 +405,7 @@
       world.platforms.push({x, y, w, h});
     }
 
-    for (const hz of (pf.hazards||[])){
-      let x = attachX + hz.x + jitter(0, Math.min(40, amp*0.4));
-      const y = hz.y, w = Math.max(40, hz.w + jitter(0, 12)), h = hz.h;
-      section.hazards.push({x,y,w,h});
-      world.hazards.push({x,y,w,h});
-    }
+
 
     // Gate: place on ground near gateAt; ensure it lands on solid platform
     const gx = attachX + pf.gateAt;
@@ -473,12 +466,7 @@
     ctx.fillStyle = '#2c5a3f'; ctx.fillRect(p.x - camX, p.y - camY, p.w, p.h);
     ctx.fillStyle = '#9bdc6a'; ctx.fillRect(p.x - camX, p.y - camY, p.w, 6);
   }
-  function drawHazard(h){
-    const x = h.x - camX, y = h.y - camY;
-    ctx.fillStyle = '#2b1f1b'; ctx.fillRect(x,y,h.w,h.h);
-    ctx.fillStyle = '#3a2a22';
-    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(x + (i+0.5)*h.w/3, y+8+(Math.sin(time*2+i)*3),6,0,Math.PI*2); ctx.fill(); }
-  }
+
   function drawGate(g){
     const x = g.x - camX, y = g.y - camY;
     const st = tierStyle[g.tier];
@@ -800,7 +788,7 @@ Consider user performance in question history to adjust difficulty appropriately
 
   /* ---------- Init world with a few sections ---------- */
   function initWorld(){
-    world = { sections:[], nextX:0, hazards:[], platforms:[], gates:[] };
+    world = { sections:[], nextX:0, platforms:[], gates:[] };
     for (let i=0;i<4;i++){ spawnNextSection(); sectionCounter++; }
     player.x = 120; player.y = 100; player.vx=0; player.vy=0;
     player.spawnX = 120; player.spawnY = 100; // Store initial spawn position
@@ -900,6 +888,7 @@ Consider user performance in question history to adjust difficulty appropriately
     
     // Reset lives but keep score and checkpoints
     lives = 3;
+
     // Reset player position to current spawn point
     player.x = player.spawnX;
     player.y = player.spawnY;
@@ -910,9 +899,12 @@ Consider user performance in question history to adjust difficulty appropriately
     asking = false;
     promptEl.style.display = 'none';
     
-    // Hide end screen and restart game
+    // Hide end screen
     document.getElementById('endScreen').style.display = 'none';
+    
+    // Restart the game
     gameStarted = true;
+    requestAnimationFrame(loop);
   }
 
   /* ---------- Initialize Game ---------- */
@@ -998,22 +990,7 @@ Consider user performance in question history to adjust difficulty appropriately
         rect.x = player.x; rect.y = player.y;
       }
 
-      for (const h of world.hazards){
-        if (aabb(rect,h)){
-          lives = Math.max(0, lives-1); 
-          sectionDeaths++; 
-          showToast('Yikes, tar pit!');
-          player.x = player.spawnX; 
-          player.y=player.spawnY; 
-          player.vx=0; 
-          player.vy=0; 
-          if (lives === 0) {
-            endGame('Game Over!', `You completed ${score} points worth of challenges`);
-            return;
-          }
-          break;
-        }
-      }
+
 
       // Gate check: if touching a closed gate, ask
       for (const g of world.gates){
@@ -1047,7 +1024,6 @@ Consider user performance in question history to adjust difficulty appropriately
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawBackground();
     world.platforms.forEach(drawPlatform);
-    world.hazards.forEach(drawHazard);
     world.gates.forEach(drawGate);
     drawPlayer();
 
