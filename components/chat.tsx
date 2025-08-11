@@ -108,7 +108,7 @@ export function Chat({
           .replace(/^./, str => str.toUpperCase())
           .trim();
         return `**${readableKey}:** ${value}`;
-      }).join('\n');
+      }).join('\n\n');
       
       // Send as a regular user message
       // This will appear in UI, save to DB, and get LLM response

@@ -190,6 +190,15 @@
   // Game props injected by server
   const props = {{GAME_PROPS}};
   
+  const formatSpec = `Return questions in this exact JSON format:
+{
+  "question": "What is 7 × 8?",
+  "answers": ["56", "48", "54", "63"],
+  "correctAnswerIndex": 1,
+  "difficulty": "medium"
+}
+Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard`;
+
   // Question management
   let questions = [];
   let currentQuestionIndex = 0;
@@ -809,6 +818,7 @@
       btn.style.borderColor = st.popup;
       btn.style.background = `linear-gradient(135deg, ${st.frame}dd, ${st.popup}dd)`;
       btn.style.color = "#fff";
+      btn.style.boxShadow = ""; // Clear any previous glow effects
     });
     
     // Get next question from LLM questions
@@ -1013,16 +1023,6 @@
   /* ---------- Question Loading ---------- */
   async function loadInitialQuestions() {
     questionsLoading = true;
-    
-    const formatSpec = `Return questions in this exact JSON format:
-{
-  "question": "What is 7 × 8?",
-  "answers": ["56", "48", "54", "63"],
-  "correctAnswerIndex": 0,
-  "difficulty": "medium"
-}
-Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard`;
-    
     const gameQuestions = await GameUtils.generateQuestions(props, 10, formatSpec);
     
     if (gameQuestions && gameQuestions.length > 0) {
@@ -1037,17 +1037,6 @@ Answers must be strings. difficulty must be one of: very-easy, easy, medium, har
   
   async function loadMoreQuestions() {
     nextQuestionsLoading = true;
-    
-    const formatSpec = `Return questions in this exact JSON format:
-{
-  "question": "What is 7 × 8?",
-  "answers": ["56", "48", "54", "63"],
-  "correctAnswerIndex": 0,
-  "difficulty": "medium"
-}
-Answers must be strings. difficulty must be one of: very-easy, easy, medium, hard, very-hard
-Consider user performance in question history to adjust difficulty appropriately.`;
-    
     const moreQuestions = await GameUtils.generateQuestions(props, 10, formatSpec);
     
     if (moreQuestions && moreQuestions.length > 0) {
