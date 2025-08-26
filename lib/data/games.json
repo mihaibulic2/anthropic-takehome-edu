@@ -24,6 +24,11 @@
       "id": "fly-and-dive",
       "specType": "state",
       "description": "Game for 4th-6th graders to practice some math concepts. Requires some basic reading comprehension. Variant 1: Vertical number line basics with positive numbers only, position identification and directional movement. Variant 2: Negative numbers and operations across zero, addition/subtraction with integers above and below sea level. Variant 3: Algebraic equations with unknowns, solving for missing values in position-based problems (this has 4 levels: level 1: round positive numbers only, level 2: negative numbers and operations across zero, level 3: algebraic equations with unknowns, level 4: non-round numbers -- other variants have no level). When choosing this game, use the alternate style (state: { variant: 'v1' | 'v2' | 'v3', level: undefined | 1 | 2 | 3 | 4 })"
+    },
+    {
+      "id": "fractions-visual",
+      "specType": "questions",
+      "description": "Interactive visual fractions game where students learn fraction concepts through colorful fraction bars and pie charts. Covers basic fractions, equivalent fractions, and fraction comparisons. Game mechanics suitable for ages 6+, requires basic reading and number recognition skills."
     }
   ]
 }
